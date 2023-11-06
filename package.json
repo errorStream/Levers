@@ -1,0 +1,13 @@
+{
+  "name": "com.amequus.levers",
+  "version": "1.0.0",
+  "description": "A collection of drawing primitives for use in unity editor scripts",
+  "displayName": "Levers",
+  "samples": [
+    {
+      "displayName": "Drawing Demos",
+      "description": "Provides a window which shows demos of variouse drawing operations",
+      "path": "Samples~/DrawingSamples"
+    }
+  ]
+}

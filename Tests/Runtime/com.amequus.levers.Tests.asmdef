@@ -1,0 +1,9 @@
+{
+    "name": "com.amequus.levers.Tests",
+    "references": [
+        "com.amequus.levers"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}
