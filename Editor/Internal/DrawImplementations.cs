@@ -7,22 +7,22 @@ namespace Levers
 {
     internal static class DrawImplementations
     {
-        private static void UpdateTexture()
+        private static void UpdateTexture(Material material)
         {
-            if (State.GradientFill == null)
+            if (State.TextureFill == null)
             {
-                Material.SetTexture("_MainTex", null);
+                material.SetTexture("_MainTex", null);
             }
             else
             {
-                Material.SetTexture("_MainTex", State.GradientFill.Texture);
+                material.SetTexture("_MainTex", State.TextureFill.Texture);
             }
         }
         private class RenderState : IRenderState
         {
             public Color Fill { get; set; } = Color.white;
             public Color Stroke { get; set; } = Color.black;
-            public IGradient GradientFill { get; set; } = null;
+            public ITextureFill TextureFill { get; set; } = null;
             public int StrokeWeight { get; set; } = 1;
 
             public RenderState()
@@ -47,25 +47,25 @@ namespace Levers
             // Debug.Log("VisibleRect: " + res);
             return res;
         }
-        private static void UpdateClipRect()
+        private static void UpdateClipRect(Material material)
         {
             Rect? visibleRect = GetVisibleRect();
             if (visibleRect != null)
             {
                 var vr = visibleRect.Value;
                 var vect = new Vector4(vr.xMin, vr.yMin, vr.xMax, vr.yMax);
-                Material.SetVector(_clipRectVariableName, vect);
-                if (!Material.IsKeywordEnabled(_unityUiClipRectKeyword))
+                material.SetVector(_clipRectVariableName, vect);
+                if (!material.IsKeywordEnabled(_unityUiClipRectKeyword))
                 {
-                    Material.EnableKeyword(_unityUiClipRectKeyword);
+                    material.EnableKeyword(_unityUiClipRectKeyword);
                 }
             }
             else
             {
-                Material.SetVector(_clipRectVariableName, new Vector4(0, 0, Screen.width, Screen.height));
-                if (Material.IsKeywordEnabled(_unityUiClipRectKeyword))
+                material.SetVector(_clipRectVariableName, new Vector4(0, 0, Screen.width, Screen.height));
+                if (material.IsKeywordEnabled(_unityUiClipRectKeyword))
                 {
-                    Material.DisableKeyword(_unityUiClipRectKeyword);
+                    material.DisableKeyword(_unityUiClipRectKeyword);
                 }
             }
         }
@@ -83,6 +83,22 @@ namespace Levers
                     };
                 }
                 return __material;
+            }
+        }
+        private static Material __fillComplexPolygonMaterial;
+        private static Material FillComplexPolygonMaterial
+        {
+            get
+            {
+                if (__fillComplexPolygonMaterial == null)
+                {
+                    var shader = Shader.Find("Hidden/Com/Amequus/Levers/FillComplexPolygon");
+                    __fillComplexPolygonMaterial = new Material(shader)
+                    {
+                        hideFlags = HideFlags.HideAndDontSave
+                    };
+                }
+                return __fillComplexPolygonMaterial;
             }
         }
         private static void DrawThickPolyline(float width, int actualNumberOfPoints, IReadOnlyList<Vector2> vertices)
@@ -269,9 +285,9 @@ namespace Levers
 
         private static void AddPoint(Vector2 p1)
         {
-            if (State.GradientFill != null)
+            if (State.TextureFill != null)
             {
-                var gf = State.GradientFill;
+                var gf = State.TextureFill;
                 var trn = Matrix4x4.Translate(gf.Center)
                     * Matrix4x4.Rotate(Quaternion.Euler(0, 0, gf.Rotation))
                     * Matrix4x4.Scale(new Vector3(gf.Scale.x, gf.Scale.y, 1))
@@ -295,13 +311,45 @@ namespace Levers
             GUI.matrix = Matrix4x4.identity;
 
             GL.PushMatrix();
-            UpdateClipRect();
-            UpdateTexture();
+            UpdateClipRect(Material);
+            UpdateTexture(Material);
             if (!Material.SetPass(0))
             {
                 Debug.LogWarning("Failed to set material pass");
             }
             GL.Begin(drawMode);
+            GL.Color(color);
+        }
+        private const int _maxPolygonVertices = 64;
+        private static readonly Vector4[] _polygonVertices = new Vector4[_maxPolygonVertices];
+        private static void DrawSetupComplexPolygon(IReadOnlyList<Vector2> polygonVertices, Color color)
+        {
+            _oldMatrix = GUI.matrix;
+            // NOTE: Must be in world space for clipping
+            // TODO: Might be a way to do this by inverting clipping rect. Test later.
+            GUI.matrix = Matrix4x4.identity;
+
+            GL.PushMatrix();
+            UpdateClipRect(FillComplexPolygonMaterial);
+            UpdateTexture(FillComplexPolygonMaterial);
+
+            { // NOTE: Can probably move this section out to unify with DrawSetup
+                if (polygonVertices.Count > _maxPolygonVertices)
+                {
+                    throw new Exception("Too many vertices in polygon: " + polygonVertices.Count);
+                }
+                for (int i = 0; i < polygonVertices.Count; ++i)
+                {
+                    _polygonVertices[i] = (Vector4)_oldMatrix.MultiplyPoint(polygonVertices[i]);
+                }
+                FillComplexPolygonMaterial.SetVectorArray("_polygonVertices", _polygonVertices);
+                FillComplexPolygonMaterial.SetInt("_vertexCount", polygonVertices.Count);
+            }
+            if (!FillComplexPolygonMaterial.SetPass(0))
+            {
+                Debug.LogWarning("Failed to set polygon material pass");
+            }
+            GL.Begin(GL.TRIANGLES);
             GL.Color(color);
         }
         private static void DrawCleanup()
@@ -310,6 +358,27 @@ namespace Levers
             GL.PopMatrix();
 
             GUI.matrix = _oldMatrix;
+        }
+        internal static void DrawFilledComplexPolygon(IReadOnlyList<Vector2> vertices)
+        {
+            // NOTE: Need to test with rotation and scale matrix, make sure doesn't clip
+            Vector2 min = new Vector2(float.PositiveInfinity, float.PositiveInfinity),
+                max = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                min = Vector2.Min(min, vertices[i]);
+                max = Vector2.Max(max, vertices[i]);
+            }
+
+            DrawSetupComplexPolygon(vertices, State.Fill); // NOTE: Might be able to change this to GL.QUADS
+            AddPoint(new Vector2(min.x, min.y));
+            AddPoint(new Vector2(max.x, min.y));
+            AddPoint(new Vector2(max.x, max.y));
+            AddPoint(new Vector2(min.x, min.y));
+            AddPoint(new Vector2(max.x, max.y));
+            AddPoint(new Vector2(min.x, max.y));
+            DrawCleanup();
         }
         private static void DrawFilledConvexPolygon(IReadOnlyList<Vector2> vertices)
         {
@@ -540,106 +609,6 @@ namespace Levers
 
             return points;
         }
-        private static Vector2 CalculateCubicBezierPoint(float t, Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3)
-        {
-            float u = 1 - t;
-            float tt = t * t;
-            float uu = u * u;
-            float uuu = uu * u;
-            float ttt = tt * t;
-
-            Vector2 point = uuu * p0;
-            point += 3 * uu * t * p1;
-            point += 3 * u * tt * p2;
-            point += ttt * p3;
-
-            return point;
-        }
-        private static Vector2[] GenerateCubicBezierPoints(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, int numPoints)
-        {
-            Vector2[] points = new Vector2[numPoints];
-            float t;
-
-            for (int i = 0; i < numPoints; i++)
-            {
-                t = (float)i / (numPoints - 1);
-                points[i] = CalculateCubicBezierPoint(t, p0, p1, p2, p3);
-            }
-
-            return points;
-        }
-        private static Vector2[] GenerateQuadraticBezierPoints(Vector2 p0, Vector2 p1, Vector2 p2, int numPoints)
-        {
-            Vector2[] points = new Vector2[numPoints];
-            float t;
-
-            for (int i = 0; i < numPoints; i++)
-            {
-                t = (float)i / (numPoints - 1);
-                points[i] = CalculateQuadraticBezierPoint(t, p0, p1, p2);
-            }
-
-            return points;
-        }
-
-        private static Vector2 CalculateQuadraticBezierPoint(float t, Vector2 p0, Vector2 p1, Vector2 p2)
-        {
-            float u = 1 - t;
-            float tt = t * t;
-            float uu = u * u;
-
-            Vector2 point = uu * p0;
-            point += 2 * u * t * p1;
-            point += tt * p2;
-
-            return point;
-        }
-
-        private static List<Vector2> ApproximateCubicBSpline(IReadOnlyList<Vector2> controlPoints, int segmentsPerCurve = 10)
-        {
-            if (controlPoints == null || controlPoints.Count < 4)
-            {
-                Debug.LogError("At least 4 control points are required for a cubic B-spline.");
-                return null;
-            }
-
-            List<Vector2> polylinePoints = new List<Vector2>();
-
-            for (int i = 0; i < controlPoints.Count - 3; i++)
-            {
-                Vector2 p0 = controlPoints[i];
-                Vector2 p1 = controlPoints[i + 1];
-                Vector2 p2 = controlPoints[i + 2];
-                Vector2 p3 = controlPoints[i + 3];
-
-                polylinePoints.AddRange(BSpline(p0, p1, p2, p3, segmentsPerCurve));
-            }
-
-            return polylinePoints;
-        }
-        private static List<Vector2> BSpline(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, int divisions)
-        {
-            var res = new List<Vector2>();
-            var a0 = (-p1.x + 3f * p2.x - 3f * p3.x + p4.x) / 6.0f;
-            var a1 = (3f * p1.x - 6f * p2.x + 3f * p3.x) / 6.0f;
-            var a2 = (-3f * p1.x + 3f * p3.x) / 6.0f;
-            var a3 = (p1.x + 4f * p2.x + p3.x) / 6.0f;
-            var b0 = (-p1.y + 3f * p2.y - 3f * p3.y + p4.y) / 6.0f;
-            var b1 = (3f * p1.y - 6f * p2.y + 3f * p3.y) / 6.0f;
-            var b2 = (-3f * p1.y + 3f * p3.y) / 6.0f;
-            var b3 = (p1.y + 4f * p2.y + p3.y) / 6.0f;
-            res.Add(new Vector2(a3, b3));
-            for (int i = 1; i < divisions; i++)
-            {
-                float t;
-                t = i / ((float)divisions);
-                res.Add(new Vector2(
-                            a3 + t * (a2 + t * (a1 + t * a0)),
-                            b3 + t * (b2 + t * (b1 + t * b0))));
-            }
-            return res;
-        }
-
         private static Vector2[] CalcArrowheadPoints(Vector2 start, Vector2 end, float widthRatio)
         {
             Vector2[] points = new Vector2[3];
@@ -663,7 +632,7 @@ namespace Levers
         {
             Color Fill { get; set; }
             Color Stroke { get; set; }
-            IGradient GradientFill { get; set; }
+            ITextureFill TextureFill { get; set; }
             int StrokeWeight { get; set; }
         }
         internal static void EllipseImpl(Vector2 center, float width, float height, int segments)
@@ -789,7 +758,7 @@ namespace Levers
         {
             if (State.Stroke != Color.clear)
             {
-                var points = GenerateCubicBezierPoints(p0, p1, p2, p3, numPoints);
+                var points = PathComputation.GenerateCubicBezierPoints(p0, p1, p2, p3, numPoints);
                 DrawPolyline(points.Length, points);
             }
         }
@@ -797,7 +766,7 @@ namespace Levers
         {
             if (State.Stroke != Color.clear)
             {
-                var points = GenerateQuadraticBezierPoints(p0, p1, p2, numPoints);
+                var points = PathComputation.GenerateQuadraticBezierPoints(p0, p1, p2, numPoints);
                 DrawPolyline(points.Length, points);
             }
         }
@@ -808,7 +777,7 @@ namespace Levers
                 return;
             }
 
-            var points = ApproximateCubicBSpline(controlPoints, segmentsPerCurve);
+            var points = PathComputation.ApproximateCubicBSpline(controlPoints, segmentsPerCurve);
 
             DrawPolyline(points);
         }
@@ -818,6 +787,19 @@ namespace Levers
             if (State.Fill != Color.clear)
             {
                 DrawFilledConvexPolygon(points);
+            }
+
+            if (State.Stroke != Color.clear)
+            {
+                DrawPolyline(points, closed: true);
+            }
+        }
+        internal static void DrawPathImpl(Path2D path)
+        {
+            var points = path.ExportPoints();
+            if (State.Fill != Color.clear)
+            {
+                DrawFilledComplexPolygon(points);
             }
 
             if (State.Stroke != Color.clear)

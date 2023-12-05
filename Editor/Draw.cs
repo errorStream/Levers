@@ -5,10 +5,10 @@ namespace Levers
 {
     public static class Draw
     {
-        public static IGradient GradientFill
+        public static ITextureFill TextureFill
         {
-            get => DrawImplementations.State.GradientFill;
-            set => DrawImplementations.State.GradientFill = value;
+            get => DrawImplementations.State.TextureFill;
+            set => DrawImplementations.State.TextureFill = value;
         }
         public static Color Fill
         {
@@ -269,6 +269,19 @@ namespace Levers
         public static void Arrowhead(float startX, float startY, Vector2 end, float widthRatio = 1)
         {
             DrawImplementations.ArrowheadImpl(new Vector2(startX, startY), end, widthRatio);
+        }
+        public static void Path(Path2D path = null)
+        {
+            if (path == null)
+            {
+                path = new Path2D(new Vector2(30, 20));
+                path.LineTo(new Vector2(75, 20));
+                path.LineTo(new Vector2(75, 5));
+                path.LineTo(new Vector2(85, 5));
+                path.LineTo(new Vector2(85, 75));
+                path.LineTo(new Vector2(30, 75));
+            }
+            DrawImplementations.DrawPathImpl(path);
         }
     }
 }

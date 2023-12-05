@@ -3,20 +3,12 @@ using UnityEngine;
 
 namespace Levers
 {
-    public interface IGradient
-    {
-        Texture2D Texture { get; }
-        Vector2 Size { get; }
-        Vector2 Center { get; set; }
-        Vector2 Scale { get; set; }
-        float Rotation { get; set; }
-    }
-    public class LinearGradient : IGradient
+    public class LinearGradient : ITextureFill
     {
         public Texture2D Texture { get; }
         public Vector2 Size { get; }
         public Vector2 Center { get; set; }
-        public Vector2 Scale { get; set; }
+        public Vector2 Scale { get; set; } = Vector2.one;
         public float Rotation { get; set; }
         public LinearGradient(IReadOnlyList<ColorStop> stops, Vector2 size, int detail = 128)
         {
@@ -28,12 +20,12 @@ namespace Levers
             Object.DestroyImmediate(Texture);
         }
     }
-    public class RadialGradient : IGradient
+    public class RadialGradient : ITextureFill
     {
         public Texture2D Texture { get; }
         public Vector2 Size { get; }
         public Vector2 Center { get; set; }
-        public Vector2 Scale { get; set; }
+        public Vector2 Scale { get; set; } = Vector2.one;
         public float Rotation { get; set; }
         public RadialGradient(IReadOnlyList<ColorStop> stops, Vector2 size, int detail = 128)
         {
