@@ -51,7 +51,7 @@ Shader "Hidden/Com/Amequus/Levers/FillComplexPolygon"
             #pragma fragment frag
             #pragma target 2.0
 
-            #define MAX_VERTICES 64
+            #define MAX_VERTICES 512
             float2 _polygonVertices[MAX_VERTICES];
             uint _vertexCount; // Actual number of vertices in the polygon
 
@@ -106,11 +106,11 @@ Shader "Hidden/Com/Amequus/Levers/FillComplexPolygon"
 
                 uint intersections = 0;
 
-                for (uint i = 0; i < _vertexCount; i++)
+                for (uint i = 0; i < _vertexCount; i+=2)
                 {
                     // Get the current vertex and the next vertex (wrap around at the end).
                     float2 vertexA = _polygonVertices[i];
-                    float2 vertexB = _polygonVertices[(i + 1) % _vertexCount];
+                    float2 vertexB = _polygonVertices[i + 1];
 
                     // Check if the line from this vertex to the next crosses the horizontal line from the test point.
                     bool inVerticalRange = (vertexA.y > pnt.y) != (vertexB.y > pnt.y);

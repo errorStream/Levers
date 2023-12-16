@@ -97,31 +97,90 @@ namespace Levers
 
             return point;
         }
-        internal static Vector2[] GenerateCubicBezierPoints(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, int numPoints)
+        private static float DistanceFromLineToPoint(Vector2 point, Vector2 P1, Vector2 P2)
         {
-            Vector2[] points = new Vector2[numPoints];
-            float t;
-
-            for (int i = 0; i < numPoints; i++)
-            {
-                t = (float)i / (numPoints - 1);
-                points[i] = CalculateCubicBezierPoint(t, p0, p1, p2, p3);
-            }
-
-            return points;
+            var hyp = (point - P1).magnitude;
+            var angle = Vector2.Angle(point - P1, P2 - P1);
+            return Mathf.Sin(angle * Mathf.Deg2Rad) * hyp;
         }
-        internal static Vector2[] GenerateQuadraticBezierPoints(Vector2 p0, Vector2 p1, Vector2 p2, int numPoints)
+        private static readonly List<Vector2> _pointCache = new List<Vector2>();
+        internal static Vector2[] GenerateCubicBezierPoints(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float threshold, int maxDepth = 6)
         {
-            Vector2[] points = new Vector2[numPoints];
-            float t;
+            var maxCount = Mathf.Pow(2, maxDepth);
 
-            for (int i = 0; i < numPoints; i++)
+            _pointCache.Clear();
+
+            _pointCache.Add(p0);
+
+            void SubDivide(float t, float leftT, float rightT)
             {
-                t = (float)i / (numPoints - 1);
-                points[i] = CalculateQuadraticBezierPoint(t, p0, p1, p2);
+                if (rightT - leftT <= 1 / maxCount)
+                {
+                    Debug.Log("Reached subdivide limit");
+                    return;
+                }
+                void SubDivideSide(float left, float right)
+                {
+                    var t = (left + right) / 2f;
+                    var leftPoint = CalculateCubicBezierPoint(left, p0, p1, p2, p3);
+                    var rightPoint = CalculateCubicBezierPoint(right, p0, p1, p2, p3);
+                    var point = CalculateCubicBezierPoint(t, p0, p1, p2, p3);
+                    var distance = DistanceFromLineToPoint(point, leftPoint, rightPoint);
+                    if (distance > threshold)
+                    {
+                        SubDivide(t, left, right);
+                    }
+                }
+
+                SubDivideSide(leftT, t);
+                _pointCache.Add(CalculateCubicBezierPoint(t, p0, p1, p2, p3));
+                SubDivideSide(t, rightT);
             }
 
-            return points;
+            SubDivide(0.5f, 0f, 1f);
+
+            _pointCache.Add(p3);
+
+            return _pointCache.ToArray();
+        }
+        internal static Vector2[] GenerateQuadraticBezierPoints(Vector2 p0, Vector2 p1, Vector2 p2, float threshold, int maxDepth = 6)
+        {
+            var maxCount = Mathf.Pow(2, maxDepth);
+
+            _pointCache.Clear();
+
+            _pointCache.Add(p0);
+
+            void SubDivide(float t, float leftT, float rightT)
+            {
+                if (rightT - leftT <= 1 / maxCount)
+                {
+                    Debug.Log("Reached subdivide limit");
+                    return;
+                }
+                void SubDivideSide(float left, float right)
+                {
+                    var t = (left + right) / 2f;
+                    var leftPoint = CalculateQuadraticBezierPoint(left, p0, p1, p2);
+                    var rightPoint = CalculateQuadraticBezierPoint(right, p0, p1, p2);
+                    var point = CalculateQuadraticBezierPoint(t, p0, p1, p2);
+                    var distance = DistanceFromLineToPoint(point, leftPoint, rightPoint);
+                    if (distance > threshold)
+                    {
+                        SubDivide(t, left, right);
+                    }
+                }
+
+                SubDivideSide(leftT, t);
+                _pointCache.Add(CalculateQuadraticBezierPoint(t, p0, p1, p2));
+                SubDivideSide(t, rightT);
+            }
+
+            SubDivide(0.5f, 0f, 1f);
+
+            _pointCache.Add(p2);
+
+            return _pointCache.ToArray();
         }
 
         private static Vector2 CalculateQuadraticBezierPoint(float t, Vector2 p0, Vector2 p1, Vector2 p2)

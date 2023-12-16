@@ -153,102 +153,101 @@ namespace Levers
         {
             DrawImplementations.VariableRadiusPolygonImpl(center.x, center.y, radii, rotation);
         }
-        private const int DEFAULT_BEZIER_DETAIL = 20;
         public static void Bezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4)
         {
-            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), new Vector2(x3, y3), new Vector2(x4, y4), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), new Vector2(x3, y3), new Vector2(x4, y4));
         }
         public static void Bezier(Vector2 p1, float x2, float y2, float x3, float y3, float x4, float y4)
         {
-            DrawImplementations.CubicBezierImpl(p1, new Vector2(x2, y2), new Vector2(x3, y3), new Vector2(x4, y4), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(p1, new Vector2(x2, y2), new Vector2(x3, y3), new Vector2(x4, y4));
         }
         public static void Bezier(float x1, float y1, Vector2 p2, float x3, float y3, float x4, float y4)
         {
-            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), p2, new Vector2(x3, y3), new Vector2(x4, y4), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), p2, new Vector2(x3, y3), new Vector2(x4, y4));
         }
         public static void Bezier(float x1, float y1, float x2, float y2, Vector2 p3, float x4, float y4)
         {
-            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), p3, new Vector2(x4, y4), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), p3, new Vector2(x4, y4));
         }
         public static void Bezier(float x1, float y1, float x2, float y2, float x3, float y3, Vector2 p4)
         {
-            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), new Vector2(x3, y3), p4, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), new Vector2(x3, y3), p4);
         }
         public static void Bezier(Vector2 p1, Vector2 p2, float x3, float y3, float x4, float y4)
         {
-            DrawImplementations.CubicBezierImpl(p1, p2, new Vector2(x3, y3), new Vector2(x4, y4), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(p1, p2, new Vector2(x3, y3), new Vector2(x4, y4));
         }
         public static void Bezier(Vector2 p1, float x2, float y2, Vector2 p3, float x4, float y4)
         {
-            DrawImplementations.CubicBezierImpl(p1, new Vector2(x2, y2), p3, new Vector2(x4, y4), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(p1, new Vector2(x2, y2), p3, new Vector2(x4, y4));
         }
         public static void Bezier(Vector2 p1, float x2, float y2, float x3, float y3, Vector2 p4)
         {
-            DrawImplementations.CubicBezierImpl(p1, new Vector2(x2, y2), new Vector2(x3, y3), p4, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(p1, new Vector2(x2, y2), new Vector2(x3, y3), p4);
         }
         public static void Bezier(float x1, float y1, Vector2 p2, Vector2 p3, float x4, float y4)
         {
-            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), p2, p3, new Vector2(x4, y4), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), p2, p3, new Vector2(x4, y4));
         }
         public static void Bezier(float x1, float y1, Vector2 p2, float x3, float y3, Vector2 p4)
         {
-            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), p2, new Vector2(x3, y3), p4, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), p2, new Vector2(x3, y3), p4);
         }
         public static void Bezier(float x1, float y1, float x2, float y2, Vector2 p3, Vector2 p4)
         {
-            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), p3, p4, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), p3, p4);
         }
         public static void Bezier(Vector2 p1, Vector2 p2, Vector2 p3, float x4, float y4)
         {
-            DrawImplementations.CubicBezierImpl(p1, p2, p3, new Vector2(x4, y4), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(p1, p2, p3, new Vector2(x4, y4));
         }
         public static void Bezier(Vector2 p1, Vector2 p2, float x3, float y3, Vector2 p4)
         {
-            DrawImplementations.CubicBezierImpl(p1, p2, new Vector2(x3, y3), p4, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(p1, p2, new Vector2(x3, y3), p4);
         }
         public static void Bezier(Vector2 p1, float x2, float y2, Vector2 p3, Vector2 p4)
         {
-            DrawImplementations.CubicBezierImpl(p1, new Vector2(x2, y2), p3, p4, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(p1, new Vector2(x2, y2), p3, p4);
         }
         public static void Bezier(float x1, float y1, Vector2 p2, Vector2 p3, Vector2 p4)
         {
-            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), p2, p3, p4, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(new Vector2(x1, y1), p2, p3, p4);
         }
         public static void Bezier(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4)
         {
-            DrawImplementations.CubicBezierImpl(p1, p2, p3, p4, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.CubicBezierImpl(p1, p2, p3, p4);
         }
         public static void Bezier(float x1, float y1, float x2, float y2, float x3, float y3)
         {
-            DrawImplementations.QuadraticBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), new Vector2(x3, y3), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.QuadraticBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), new Vector2(x3, y3));
         }
         public static void Bezier(Vector2 p1, float x2, float y2, float x3, float y3)
         {
-            DrawImplementations.QuadraticBezierImpl(p1, new Vector2(x2, y2), new Vector2(x3, y3), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.QuadraticBezierImpl(p1, new Vector2(x2, y2), new Vector2(x3, y3));
         }
         public static void Bezier(float x1, float y1, Vector2 p2, float x3, float y3)
         {
-            DrawImplementations.QuadraticBezierImpl(new Vector2(x1, y1), p2, new Vector2(x3, y3), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.QuadraticBezierImpl(new Vector2(x1, y1), p2, new Vector2(x3, y3));
         }
         public static void Bezier(float x1, float y1, float x2, float y2, Vector2 p3)
         {
-            DrawImplementations.QuadraticBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), p3, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.QuadraticBezierImpl(new Vector2(x1, y1), new Vector2(x2, y2), p3);
         }
         public static void Bezier(Vector2 p1, Vector2 p2, float x3, float y3)
         {
-            DrawImplementations.QuadraticBezierImpl(p1, p2, new Vector2(x3, y3), DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.QuadraticBezierImpl(p1, p2, new Vector2(x3, y3));
         }
         public static void Bezier(Vector2 p1, float x2, float y2, Vector2 p3)
         {
-            DrawImplementations.QuadraticBezierImpl(p1, new Vector2(x2, y2), p3, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.QuadraticBezierImpl(p1, new Vector2(x2, y2), p3);
         }
         public static void Bezier(float x1, float y1, Vector2 p2, Vector2 p3)
         {
-            DrawImplementations.QuadraticBezierImpl(new Vector2(x1, y1), p2, p3, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.QuadraticBezierImpl(new Vector2(x1, y1), p2, p3);
         }
         public static void Bezier(Vector2 p1, Vector2 p2, Vector2 p3)
         {
-            DrawImplementations.QuadraticBezierImpl(p1, p2, p3, DEFAULT_BEZIER_DETAIL);
+            DrawImplementations.QuadraticBezierImpl(p1, p2, p3);
         }
         public static void BSpline(IReadOnlyList<Vector2> controlPoints, int detail = 20)
         {
@@ -282,6 +281,14 @@ namespace Levers
                 path.LineTo(new Vector2(30, 75));
             }
             DrawImplementations.DrawPathImpl(path);
+        }
+        public static void PushState()
+        {
+            DrawImplementations.PushStateImpl();
+        }
+        public static void PopState()
+        {
+            DrawImplementations.PopStateImpl();
         }
     }
 }

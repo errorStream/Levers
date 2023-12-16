@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
@@ -7,6 +8,8 @@ namespace Levers
 {
     internal static class DrawImplementations
     {
+        private static readonly Stack<IRenderState> _stateStack = new Stack<IRenderState>();
+        private static readonly IRenderState _defaultState = new RenderState();
         private static void UpdateTexture(Material material)
         {
             if (State.TextureFill == null)
@@ -21,9 +24,11 @@ namespace Levers
         private class RenderState : IRenderState
         {
             public Color Fill { get; set; } = Color.white;
-            public Color Stroke { get; set; } = Color.black;
+            public Color Stroke { get; set; } = Color.clear;
             public ITextureFill TextureFill { get; set; } = null;
             public int StrokeWeight { get; set; } = 1;
+            public float CurvePrecision { get; set; } = 0.5f;
+            public bool AlwaysDraw { get; set; } = false;
 
             public RenderState()
             {
@@ -255,6 +260,10 @@ namespace Levers
         }
         private static void DrawPolyline(int actualNumberOfPoints, IReadOnlyList<Vector2> vertices, bool closed = false)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             if (State.StrokeWeight <= 1)
             {
                 if (closed)
@@ -320,9 +329,9 @@ namespace Levers
             GL.Begin(drawMode);
             GL.Color(color);
         }
-        private const int _maxPolygonVertices = 64;
-        private static readonly Vector4[] _polygonVertices = new Vector4[_maxPolygonVertices];
-        private static void DrawSetupComplexPolygon(IReadOnlyList<Vector2> polygonVertices, Color color)
+        internal const int MaxPolygonVertices = 512;
+        private static readonly Vector4[] _polygonVertices = new Vector4[MaxPolygonVertices];
+        private static void DrawSetupComplexPolygon(Path2D.Partition partition, Color color)
         {
             _oldMatrix = GUI.matrix;
             // NOTE: Must be in world space for clipping
@@ -334,16 +343,20 @@ namespace Levers
             UpdateTexture(FillComplexPolygonMaterial);
 
             { // NOTE: Can probably move this section out to unify with DrawSetup
-                if (polygonVertices.Count > _maxPolygonVertices)
+                if (partition.Edges.Count * 2 > MaxPolygonVertices)
                 {
-                    throw new Exception("Too many vertices in polygon: " + polygonVertices.Count);
+                    throw new Exception("Too many vertices in polygon: " + partition.Edges.Count);
                 }
-                for (int i = 0; i < polygonVertices.Count; ++i)
+                for (int i = 0; i < partition.Edges.Count; ++i)
                 {
-                    _polygonVertices[i] = (Vector4)_oldMatrix.MultiplyPoint(polygonVertices[i]);
+                    var vertexA = partition.Edges[i].Item1;
+                    var vertexB = partition.Edges[i].Item2;
+                    _polygonVertices[i * 2] = (Vector4)_oldMatrix.MultiplyPoint(vertexA);
+                    _polygonVertices[(i * 2) + 1] = (Vector4)_oldMatrix.MultiplyPoint(vertexB);
                 }
+                // Debug.Log("Polygon vertices: " + string.Join(", ", _polygonVertices.Select(v => v.ToString()).ToArray()));
                 FillComplexPolygonMaterial.SetVectorArray("_polygonVertices", _polygonVertices);
-                FillComplexPolygonMaterial.SetInt("_vertexCount", polygonVertices.Count);
+                FillComplexPolygonMaterial.SetInt("_vertexCount", partition.Edges.Count * 2);
             }
             if (!FillComplexPolygonMaterial.SetPass(0))
             {
@@ -359,26 +372,29 @@ namespace Levers
 
             GUI.matrix = _oldMatrix;
         }
-        internal static void DrawFilledComplexPolygon(IReadOnlyList<Vector2> vertices)
+        internal static void DrawFilledComplexPolygon(Path2D path)
         {
-            // NOTE: Need to test with rotation and scale matrix, make sure doesn't clip
-            Vector2 min = new Vector2(float.PositiveInfinity, float.PositiveInfinity),
-                max = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
-
-            for (int i = 0; i < vertices.Count; i++)
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
             {
-                min = Vector2.Min(min, vertices[i]);
-                max = Vector2.Max(max, vertices[i]);
+                return;
             }
-
-            DrawSetupComplexPolygon(vertices, State.Fill); // NOTE: Might be able to change this to GL.QUADS
-            AddPoint(new Vector2(min.x, min.y));
-            AddPoint(new Vector2(max.x, min.y));
-            AddPoint(new Vector2(max.x, max.y));
-            AddPoint(new Vector2(min.x, min.y));
-            AddPoint(new Vector2(max.x, max.y));
-            AddPoint(new Vector2(min.x, max.y));
-            DrawCleanup();
+            // NOTE: Need to test with rotation and scale matrix, make sure doesn't clip
+            var partitions = path.Partitions;
+            foreach (var partition in partitions)
+            {
+                var minX = path.Bounds.min.x;
+                var minY = partition.Start;
+                var maxX = path.Bounds.max.x;
+                var maxY = partition.End;
+                DrawSetupComplexPolygon(partition, State.Fill); // NOTE: Might be able to change this to GL.QUADS
+                AddPoint(new Vector2(minX, minY));
+                AddPoint(new Vector2(maxX, minY));
+                AddPoint(new Vector2(maxX, maxY));
+                AddPoint(new Vector2(minX, minY));
+                AddPoint(new Vector2(maxX, maxY));
+                AddPoint(new Vector2(minX, maxY));
+                DrawCleanup();
+            }
         }
         private static void DrawFilledConvexPolygon(IReadOnlyList<Vector2> vertices)
         {
@@ -627,16 +643,38 @@ namespace Levers
         }
 
         #region Exposed
-        internal static readonly IRenderState State = new RenderState();
+        internal static void PushStateImpl()
+        {
+            _stateStack.Push(new RenderState());
+        }
+        internal static void PopStateImpl()
+        {
+            if (_stateStack.Count == 0)
+            {
+                Debug.LogWarning("Render state stack is empty");
+                return;
+            }
+            _stateStack.Pop();
+        }
+        internal static IRenderState State => _stateStack.Count > 0 ? _stateStack.Peek() : _defaultState;
         internal interface IRenderState
         {
             Color Fill { get; set; }
             Color Stroke { get; set; }
             ITextureFill TextureFill { get; set; }
             int StrokeWeight { get; set; }
+            float CurvePrecision { get; set; }
+            /// <summary>
+            /// Should drawing be done outside EventType.Repaint?
+            /// </summary>
+            bool AlwaysDraw { get; set; }
         }
         internal static void EllipseImpl(Vector2 center, float width, float height, int segments)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             var points = GenerateEllipsePoints(center, width, height, segments);
             if (State.Fill != Color.clear)
             {
@@ -649,6 +687,10 @@ namespace Levers
         }
         internal static void ArcImpl(Vector2 center, float width, float height, float startAngle, float stopAngle, ArcDrawMode mode, int segments)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             var points = GenerateArcPoints(center, width, height, startAngle, stopAngle, mode, segments);
             if (State.Fill != Color.clear)
             {
@@ -701,6 +743,10 @@ namespace Levers
 
         internal static void RectImp(Vector2 bottomLeft, float width, float height, float tl, float tr, float br, float bl, int segments)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             Vector2[] points;
             if (tl == 0 && tr == 0 && br == 0 && bl == 0)
             {
@@ -724,6 +770,10 @@ namespace Levers
 
         internal static void LineImpl(Vector2 start, Vector2 end)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             var points = new[] { start, end };
             if (State.Stroke != Color.clear)
             {
@@ -732,6 +782,10 @@ namespace Levers
         }
         internal static void StarImp(float x, float y, float innerRadius, float outerRadius, int points, float rotation)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             if (State.Fill != Color.clear)
             {
                 DrawFilledStar(new Vector2(x, y), innerRadius, outerRadius, points, rotation);
@@ -744,6 +798,10 @@ namespace Levers
         }
         internal static void VariableRadiusPolygonImpl(float x, float y, IReadOnlyList<float> radii, float rotation)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             if (State.Fill != Color.clear)
             {
                 DrawFilledVariableRadiusPolygon(new Vector2(x, y), radii, rotation);
@@ -754,24 +812,36 @@ namespace Levers
                 DrawVariableRadiusPolygonOutline(new Vector2(x, y), radii, rotation);
             }
         }
-        internal static void CubicBezierImpl(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, int numPoints)
+        internal static void CubicBezierImpl(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             if (State.Stroke != Color.clear)
             {
-                var points = PathComputation.GenerateCubicBezierPoints(p0, p1, p2, p3, numPoints);
+                var points = PathComputation.GenerateCubicBezierPoints(p0, p1, p2, p3, State.CurvePrecision);
                 DrawPolyline(points.Length, points);
             }
         }
-        internal static void QuadraticBezierImpl(Vector2 p0, Vector2 p1, Vector2 p2, int numPoints)
+        internal static void QuadraticBezierImpl(Vector2 p0, Vector2 p1, Vector2 p2)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             if (State.Stroke != Color.clear)
             {
-                var points = PathComputation.GenerateQuadraticBezierPoints(p0, p1, p2, numPoints);
+                var points = PathComputation.GenerateQuadraticBezierPoints(p0, p1, p2, State.CurvePrecision);
                 DrawPolyline(points.Length, points);
             }
         }
         internal static void BSplineImpl(IReadOnlyList<Vector2> controlPoints, int segmentsPerCurve)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             if (controlPoints == null || controlPoints.Count < 4)
             {
                 return;
@@ -783,6 +853,10 @@ namespace Levers
         }
         internal static void ArrowheadImpl(Vector2 start, Vector2 end, float widthRatio)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             var points = CalcArrowheadPoints(start, end, widthRatio);
             if (State.Fill != Color.clear)
             {
@@ -796,15 +870,19 @@ namespace Levers
         }
         internal static void DrawPathImpl(Path2D path)
         {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
             var points = path.ExportPoints();
             if (State.Fill != Color.clear)
             {
-                DrawFilledComplexPolygon(points);
+                DrawFilledComplexPolygon(path);
             }
 
             if (State.Stroke != Color.clear)
             {
-                DrawPolyline(points, closed: true);
+                DrawPolyline(points, closed: false);
             }
         }
         #endregion Exposed
