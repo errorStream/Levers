@@ -145,8 +145,9 @@ namespace Levers
                     Vector2 vertex1 = pointB + (normalB * width);
                     Vector2 vertex2 = pointB - (normalB * width);
 
-                    AddPoint(vertex1);
-                    AddPoint(vertex2);
+                    var dist = Vector2.Distance(vertex1, vertex2);
+                    AddPoint(vertex1, new Vector2(0f, dist));
+                    AddPoint(vertex2, new Vector2(dist, 0f));
                 }
                 else if (i == count - 1)
                 {
@@ -157,8 +158,9 @@ namespace Levers
                     Vector2 vertex1 = pointB + (normalA * width);
                     Vector2 vertex2 = pointB - (normalA * width);
 
-                    AddPoint(vertex1);
-                    AddPoint(vertex2);
+                    var dist = Vector2.Distance(vertex1, vertex2);
+                    AddPoint(vertex1, new Vector2(0f, dist));
+                    AddPoint(vertex2, new Vector2(dist, 0f));
                 }
                 else
                 {
@@ -172,8 +174,9 @@ namespace Levers
                     Vector2 vertex1 = pointB + (cornerA * width / Vector2.Dot(cornerA, normalA));
                     Vector2 vertex2 = pointB - (cornerA * width / Vector2.Dot(cornerA, normalB));
 
-                    AddPoint(vertex1);
-                    AddPoint(vertex2);
+                    var dist = Vector2.Distance(vertex1, vertex2);
+                    AddPoint(vertex1, new Vector2(0f, dist));
+                    AddPoint(vertex2, new Vector2(dist, 0f));
                 }
             }
             DrawCleanup();
@@ -219,8 +222,9 @@ namespace Levers
                 Vector2 vertex1 = pointB + (cornerA * width / Vector2.Dot(cornerA, normalA));
                 Vector2 vertex2 = pointB - (cornerA * width / Vector2.Dot(cornerA, normalB));
 
-                AddPoint(vertex1);
-                AddPoint(vertex2);
+                var dist = Vector2.Distance(vertex1, vertex2);
+                AddPoint(vertex1, new Vector2(0f, dist));
+                AddPoint(vertex2, new Vector2(dist, 0f));
             }
             DrawCleanup();
         }
@@ -292,8 +296,9 @@ namespace Levers
             DrawPolyline(vertices.Count, vertices, closed);
         }
 
-        private static void AddPoint(Vector2 p1)
+        private static void AddPoint(Vector2 p1, Vector2? uv2 = null)
         {
+            var uv = Vector2.zero;
             if (State.TextureFill != null)
             {
                 var gf = State.TextureFill;
@@ -304,8 +309,16 @@ namespace Levers
                     * Matrix4x4.Translate(new Vector3(-gf.Texture.width / 2f, -gf.Texture.height / 2f, 0))
                     ;
                 var p2 = trn.inverse.MultiplyPoint(p1);
-                var uv = p2 / new Vector2(gf.Texture.width, gf.Texture.height);
-                GL.TexCoord2(uv.x, uv.y);
+                uv = p2 / new Vector2(gf.Texture.width, gf.Texture.height);
+            }
+            GL.MultiTexCoord(0, uv);
+            if (uv2.HasValue)
+            {
+                GL.MultiTexCoord(1, uv2.Value);
+            }
+            else
+            {
+                GL.MultiTexCoord(1, new Vector2(1000, 1000));
             }
             GL.Vertex(_oldMatrix.MultiplyPoint(p1));
         }

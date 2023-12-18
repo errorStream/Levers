@@ -62,6 +62,7 @@ Shader "Hidden/Com/Amequus/Levers/Draw"
                 float4 vertex   : POSITION;
                 float4 color    : COLOR;
                 float2 texcoord : TEXCOORD0;
+                float2 texcoord2 : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -70,6 +71,7 @@ Shader "Hidden/Com/Amequus/Levers/Draw"
                 float4 vertex   : SV_POSITION;
                 fixed4 color    : COLOR;
                 float2 texcoord  : TEXCOORD0;
+                float2 texcoord2  : TEXCOORD2;
                 float4 worldPosition : TEXCOORD1;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -89,6 +91,7 @@ Shader "Hidden/Com/Amequus/Levers/Draw"
                 OUT.vertex = UnityObjectToClipPos(OUT.worldPosition);
 
                 OUT.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
+                OUT.texcoord2 = v.texcoord2;
 
                 OUT.color = v.color * _Color;
                 return OUT;
@@ -101,6 +104,9 @@ Shader "Hidden/Com/Amequus/Levers/Draw"
                 #ifdef UNITY_UI_CLIP_RECT
                 color.a *= UnityGet2DClipping(IN.worldPosition.xy, _ClipRect);
                 #endif
+
+                float antiAliasingAmount = 1.5;
+                color.a *= smoothstep(0, antiAliasingAmount, min(IN.texcoord2.x, IN.texcoord2.y));
 
                 #ifdef UNITY_UI_ALPHACLIP
                 clip (color.a - 0.001);

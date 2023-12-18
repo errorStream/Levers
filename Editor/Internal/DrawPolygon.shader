@@ -84,6 +84,22 @@ Shader "Hidden/Com/Amequus/Levers/FillComplexPolygon"
             float4 _ClipRect;
             float4 _MainTex_ST;
 
+            float2 DistancePointLineSegment(float2 pnt, float2 lineStart, float2 lineEnd) {
+                float2 lineVec = lineEnd - lineStart;
+                float2 pointVec = pnt - lineStart;
+                
+                float projectionLength = dot(pointVec, lineVec) / dot(lineVec, lineVec);
+                float2 projection = lineStart + projectionLength * lineVec;
+
+                if (projectionLength >= 0.0 && projectionLength <= 1.0) {
+                    // Projection is on the segment
+                    return length(pnt - projection);
+                } else {
+                    // Projection is not on the segment, return distance to the closest endpoint
+                    return min(length(pnt - lineStart), length(pnt - lineEnd));
+                }
+            }
+
             v2f vert(appdata_t v)
             {
                 v2f OUT;
@@ -106,6 +122,8 @@ Shader "Hidden/Com/Amequus/Levers/FillComplexPolygon"
 
                 uint intersections = 0;
 
+                float distanceToLine = 3.4028235e+38;
+
                 for (uint i = 0; i < _vertexCount; i+=2)
                 {
                     // Get the current vertex and the next vertex (wrap around at the end).
@@ -119,12 +137,15 @@ Shader "Hidden/Com/Amequus/Levers/FillComplexPolygon"
                     {
                         intersections++;
                     }
+                    distanceToLine = min(distanceToLine, DistancePointLineSegment(pnt, vertexA, vertexB));
                 }
 
                 // If the number of intersections is odd, the point is inside the polygon.
                 bool inside = (intersections % 2) != 0;
 
                 half4 color = (tex2D(_MainTex, IN.texcoord) + _TextureSampleAdd) * IN.color;
+
+                color.a *= smoothstep(0, 1, distanceToLine);
 
                 if(!inside) {
                     color.a = 0.0;
