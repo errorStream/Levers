@@ -22,6 +22,13 @@ namespace Levers
             public float End;
             public List<(Vector2, Vector2)> Edges = new List<(Vector2, Vector2)>();
             public int Depth;
+
+            public void Clear()
+            {
+                Edges.Clear();
+                Start = 0;
+                End = 0;
+            }
         }
 
         private List<Partition> _partitions = new List<Partition>();
@@ -154,6 +161,15 @@ namespace Levers
             _partitions.Clear();
         }
 
+        public void Clear()
+        {
+            _points.Clear();
+            _partitions.Clear();
+            _rootPartition.Clear();
+            _lastPoint = null;
+            Bounds = new Rect();
+        }
+
         private void AddPoints(IEnumerable<Vector2> points)
         {
             foreach (var point in points)
@@ -175,20 +191,22 @@ namespace Levers
         public void BezierCurveTo(Vector2 controlPoint1, Vector2 controlPoint2, Vector2 position)
         {
             // TODO: Make precision adaptive
-            AddPoints(PathComputation.GenerateCubicBezierPoints(_points[_points.Count - 1],
-                                                                controlPoint1,
-                                                                controlPoint2,
-                                                                position,
-                                                                DrawImplementations.State.CurvePrecision));
+            PathComputation.GenerateCubicBezierPoints(p0: _points[_points.Count - 1],
+                                                      p1: controlPoint1,
+                                                      p2: controlPoint2,
+                                                      p3: position,
+                                                      threshold: DrawImplementations.State.CurvePrecision,
+                                                      onPoint: AddPoint);
         }
 
         public void QuadraticCurveTo(Vector2 controlPoint, Vector2 position)
         {
             // TODO: Make precision adaptive
-            AddPoints(PathComputation.GenerateQuadraticBezierPoints(_points[_points.Count - 1],
-                                                                    controlPoint,
-                                                                    position,
-                                                                    DrawImplementations.State.CurvePrecision));
+            PathComputation.GenerateQuadraticBezierPoints(_points[_points.Count - 1],
+                                                          controlPoint,
+                                                          position,
+                                                          DrawImplementations.State.CurvePrecision,
+                                                          AddPoint);
         }
 
         // NOTE: Not very confident in this code yet

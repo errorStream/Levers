@@ -833,8 +833,9 @@ namespace Levers
             }
             if (State.Stroke != Color.clear)
             {
-                var points = PathComputation.GenerateCubicBezierPoints(p0, p1, p2, p3, State.CurvePrecision);
-                DrawPolyline(points.Length, points);
+                var points = new List<Vector2>(); // TODO: Remove allocation
+                PathComputation.GenerateCubicBezierPoints(p0, p1, p2, p3, State.CurvePrecision, points.Add);
+                DrawPolyline(points.Count, points);
             }
         }
         internal static void QuadraticBezierImpl(Vector2 p0, Vector2 p1, Vector2 p2)
@@ -845,8 +846,9 @@ namespace Levers
             }
             if (State.Stroke != Color.clear)
             {
-                var points = PathComputation.GenerateQuadraticBezierPoints(p0, p1, p2, State.CurvePrecision);
-                DrawPolyline(points.Length, points);
+                var points = new List<Vector2>();
+                PathComputation.GenerateQuadraticBezierPoints(p0, p1, p2, State.CurvePrecision, points.Add);
+                DrawPolyline(points.Count, points);
             }
         }
         internal static void BSplineImpl(IReadOnlyList<Vector2> controlPoints, int segmentsPerCurve)
