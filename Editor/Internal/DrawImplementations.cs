@@ -342,7 +342,7 @@ namespace Levers
         }
         internal const int MaxPolygonVertices = 512;
         private static readonly Vector4[] _polygonVertices = new Vector4[MaxPolygonVertices];
-        private static void DrawSetupComplexPolygon(Path2D.Partition partition, Color color)
+        private static void DrawSetupComplexPolygon(Path2D.IPartition partition, Color color)
         {
             _oldMatrix = GUI.matrix;
             // NOTE: Must be in world space for clipping

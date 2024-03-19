@@ -123,12 +123,27 @@ namespace Levers
 
         internal Rect? Bounds { get; private set; } = null;
 
-        internal class Partition
+        internal interface IPartition
+        {
+            float Start { get; }
+            float End { get; }
+            IReadOnlyList<(Vector2, Vector2)> Edges { get; }
+            int Depth { get; }
+        }
+        private class Partition : IPartition
         {
             internal float Start;
             internal float End;
             internal readonly List<(Vector2, Vector2)> Edges = new List<(Vector2, Vector2)>();
             internal int Depth;
+
+            float IPartition.Start => Start;
+
+            float IPartition.End => End;
+
+            IReadOnlyList<(Vector2, Vector2)> IPartition.Edges => Edges;
+
+            int IPartition.Depth => Depth;
 
             internal void Clear()
             {
@@ -146,7 +161,7 @@ namespace Levers
 
         private readonly List<Partition> _partitions = new List<Partition>();
 
-        internal IReadOnlyList<Partition> Partitions
+        internal IReadOnlyList<IPartition> Partitions
         {
             get
             {
