@@ -7,11 +7,37 @@ namespace Levers
 {
     public class Path2D
     {
+        private const int _partitionPoolSize = 256;
+        private static readonly Queue<Partition> _partitionPool = new Queue<Partition>(_partitionPoolSize);
+
+        ~Path2D()
+        {
+            ClearPartitions();
+        }
+
+        private static Partition GetPartition()
+        {
+            if (_partitionPool.Count > 0)
+            {
+                return _partitionPool.Dequeue();
+            }
+            return new Partition();
+        }
+
+        private static void ReturnPartition(Partition partition)
+        {
+            if (_partitionPool.Count >= _partitionPoolSize)
+            {
+                return;
+            }
+            _partitionPool.Enqueue(partition);
+        }
+
         public Path2D()
         {
-
+            LineToAction = LineTo;
         }
-        public Path2D(Vector2 start)
+        public Path2D(Vector2 start) : this()
         {
             AddPoint(start);
         }
@@ -20,6 +46,8 @@ namespace Levers
         {
             AddPoint(position);
         }
+
+        internal readonly Action<Vector2> LineToAction;
 
         public void BezierCurveTo(Vector2 controlPoint1, Vector2 controlPoint2, Vector2 position)
         {
@@ -70,10 +98,20 @@ namespace Levers
         public void Clear()
         {
             _points.Clear();
-            _partitions.Clear();
+            ClearPartitions();
             _rootPartition.Clear();
             _lastPoint = null;
             Bounds = null;
+        }
+
+        private void ClearPartitions()
+        {
+            foreach (var item in _partitions)
+            {
+                item.Clear();
+                ReturnPartition(item);
+            }
+            _partitions.Clear();
         }
 
         private List<Vector2> _points = new List<Vector2>();
@@ -89,14 +127,15 @@ namespace Levers
         {
             internal float Start;
             internal float End;
-            internal List<(Vector2, Vector2)> Edges = new List<(Vector2, Vector2)>();
+            internal readonly List<(Vector2, Vector2)> Edges = new List<(Vector2, Vector2)>();
             internal int Depth;
 
             internal void Clear()
             {
                 Edges.Clear();
-                Start = 0;
-                End = 0;
+                Start = default;
+                End = default;
+                Depth = default;
             }
 
             public override string ToString()
@@ -105,9 +144,9 @@ namespace Levers
             }
         }
 
-        private List<Partition> _partitions = new List<Partition>();
+        private readonly List<Partition> _partitions = new List<Partition>();
 
-        internal IReadOnlyCollection<Partition> Partitions
+        internal IReadOnlyList<Partition> Partitions
         {
             get
             {
@@ -124,29 +163,24 @@ namespace Levers
             if (parent.Depth >= 8)
             {
                 Debug.LogWarning($"Max depth reached. Path edge count: {parent.Edges.Count}");
-                yield return new Partition()
-                {
-                    Start = parent.Start,
-                    End = parent.End,
-                    Edges = parent.Edges.Take(DrawImplementations.MaxPolygonVertices / 2).ToList(),
-                    Depth = parent.Depth,
-                };
+                var pt = GetPartition();
+                pt.Start = parent.Start;
+                pt.End = parent.End;
+                pt.Edges.AddRange(parent.Edges.Take(DrawImplementations.MaxPolygonVertices / 2));
+                pt.Depth = parent.Depth;
+                yield return pt;
             }
             else
             {
 
-                var partA = new Partition()
-                {
-                    Start = parent.Start,
-                    End = ((parent.End - parent.Start) / 2f) + parent.Start,
-                    Depth = parent.Depth + 1,
-                };
-                var partB = new Partition()
-                {
-                    Start = ((parent.End - parent.Start) / 2f) + parent.Start,
-                    End = parent.End,
-                    Depth = parent.Depth + 1,
-                };
+                var partA = GetPartition();
+                partA.Start = parent.Start;
+                partA.End = ((parent.End - parent.Start) / 2f) + parent.Start;
+                partA.Depth = parent.Depth + 1;
+                var partB = GetPartition();
+                partB.Start = ((parent.End - parent.Start) / 2f) + parent.Start;
+                partB.End = parent.End;
+                partB.Depth = parent.Depth + 1;
 
                 for (int i = 0; i < parent.Edges.Count; ++i)
                 {
@@ -195,7 +229,7 @@ namespace Levers
 
         private void PerformPartition()
         {
-            _partitions.Clear();
+            ClearPartitions();
 
             if (_rootPartition.Edges.Count * 2 <= DrawImplementations.MaxPolygonVertices)
             {
@@ -234,7 +268,7 @@ namespace Levers
             _rootPartition.Start = bounds.yMin;
             _rootPartition.End = bounds.yMax;
 
-            _partitions.Clear();
+            ClearPartitions();
         }
 
         private void AddPoints(IEnumerable<Vector2> points)

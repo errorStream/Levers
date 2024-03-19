@@ -27,21 +27,23 @@ namespace Levers
         }
         private const string _unityUiClipRectKeyword = "UNITY_UI_CLIP_RECT";
         private const string _clipRectVariableName = "_ClipRect";
-        private static PropertyInfo _visibleRectProperty;
+        // private static PropertyInfo _visibleRectProperty;
+        private static Func<Rect> _visibleRectGetter;
         /// <summary>
         /// Retrives the internal value of <c>UnityEngine.GUIClip.visibleRect</c> if it exists.
         /// </summary>
         private static Rect? GetVisibleRect()
         {
-            if (_visibleRectProperty == null)
+            if (_visibleRectGetter == null)
             {
                 System.Type guiClipType = typeof(GUI).Assembly.GetType("UnityEngine.GUIClip");
                 if (guiClipType != null)
                 {
-                    _visibleRectProperty = guiClipType.GetProperty("visibleRect", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                    var prop = guiClipType.GetProperty("visibleRect", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                    _visibleRectGetter = prop == null ? null : (Func<Rect>)Delegate.CreateDelegate(typeof(Func<Rect>), prop.GetGetMethod(true));
                 }
             }
-            var res = _visibleRectProperty == null ? null : (Rect?)_visibleRectProperty.GetValue(null, null);
+            var res = _visibleRectGetter == null ? null : (Rect?)_visibleRectGetter();
             // Debug.Log("VisibleRect: " + res);
             return res;
         }
@@ -397,8 +399,9 @@ namespace Levers
             Rect bounds = path.Bounds.Value;
             // NOTE: Need to test with rotation and scale matrix, make sure doesn't clip
             var partitions = path.Partitions;
-            foreach (var partition in partitions)
+            for (int i = 0; i < partitions.Count; ++i)
             {
+                var partition = partitions[i];
                 float buffer = State.StrokeWeight + 1; // TODO: Add anti-aliasing buffer
                 var minX = bounds.min.x - buffer;
                 var minY = partition.Start;
@@ -517,22 +520,20 @@ namespace Levers
             DrawCleanup();
         }
 
-        private static Vector2[] GenerateEllipsePoints(Vector2 center, float width, float height, int segments)
+        private static void GenerateEllipsePoints(Vector2 center, float width, float height, int segments, Action<Vector2> onPoint)
         {
-            var points = new Vector2[segments];
+            // var points = new Vector2[segments];
             float angle = 0;
             float increment = 2 * Mathf.PI / segments;
 
             for (int i = 0; i < segments; i++)
             {
-                points[i] = new Vector2(
+                onPoint(new Vector2(
                     center.x + (width / 2 * Mathf.Cos(angle)),
                     center.y + (height / 2 * Mathf.Sin(angle))
-                );
+                ));
                 angle += increment;
             }
-
-            return points;
         }
         private static Vector2[] GenerateArcPoints(Vector2 center, float width, float height, float startAngle, float stopAngle, ArcDrawMode mode, int segments)
         {
@@ -696,7 +697,8 @@ namespace Levers
             {
                 return;
             }
-            var points = GenerateEllipsePoints(center, width, height, segments);
+            var points = new List<Vector2>(segments);
+            GenerateEllipsePoints(center, width, height, segments, points.Add);
             if (State.Fill != Color.clear)
             {
                 DrawFilledConvexPolygon(points);
@@ -713,12 +715,8 @@ namespace Levers
             {
                 return;
             }
-            var points = GenerateEllipsePoints(center, width, height, segments);
             _path2D.Clear();
-            for (int i = 1; i < points.Length; ++i)
-            {
-                _path2D.LineTo(points[i]);
-            }
+            GenerateEllipsePoints(center, width, height, segments, _path2D.LineToAction);
             _path2D.Close();
             DrawFilledComplexPolygon(_path2D);
         }
