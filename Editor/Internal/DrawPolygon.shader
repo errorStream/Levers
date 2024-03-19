@@ -4,6 +4,9 @@ Shader "Hidden/Com/Amequus/Levers/FillComplexPolygon"
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
+        _StrokeColor ("Stroke Color", Color) = (0,0,0,0)
+        _StrokeWeight ("Stroke Weight", Float) = 1
+        _AntiAliasing ("Anti Aliasing", Float) = 1
 
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
@@ -80,6 +83,9 @@ Shader "Hidden/Com/Amequus/Levers/FillComplexPolygon"
 
             sampler2D _MainTex;
             fixed4 _Color;
+            fixed4 _StrokeColor;
+            float _StrokeWeight;
+            float _AntiAliasing;
             fixed4 _TextureSampleAdd;
             float4 _ClipRect;
             float4 _MainTex_ST;
@@ -145,10 +151,22 @@ Shader "Hidden/Com/Amequus/Levers/FillComplexPolygon"
 
                 half4 color = (tex2D(_MainTex, IN.texcoord) + _TextureSampleAdd) * IN.color;
 
-                color.a *= smoothstep(0, 1, distanceToLine);
+                color.a *= (_AntiAliasing < 0.1) ? 1.0 : smoothstep(0.001, _AntiAliasing, distanceToLine);
 
                 if(!inside) {
                     color.a = 0.0;
+                }
+
+                if(_StrokeColor.w > 0.01 && _StrokeWeight > 0.1) {
+                    
+                    float strokeStrength = _AntiAliasing < 0.1
+                    ? (1.0 - step((_StrokeWeight / 2.0), distanceToLine))
+                    : (1.0 - smoothstep(
+                            (_StrokeWeight / 2.0) - (_AntiAliasing / 2.0),
+                            (_StrokeWeight / 2.0) + (_AntiAliasing / 2.0),
+                            distanceToLine));
+                    fixed4 strokeColor = _StrokeColor * fixed4(1.0, 1.0, 1.0, strokeStrength);
+                    color = lerp(color, strokeColor, strokeColor.a);
                 }
                 
                 #ifdef UNITY_UI_CLIP_RECT

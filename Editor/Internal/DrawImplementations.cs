@@ -10,17 +10,6 @@ namespace Levers
     {
         private static readonly Stack<IRenderState> _stateStack = new Stack<IRenderState>();
         private static readonly IRenderState _defaultState = new RenderState();
-        private static void UpdateTexture(Material material)
-        {
-            if (State.TextureFill == null)
-            {
-                material.SetTexture("_MainTex", null);
-            }
-            else
-            {
-                material.SetTexture("_MainTex", State.TextureFill.Texture);
-            }
-        }
         private class RenderState : IRenderState
         {
             public Color Fill { get; set; } = Color.white;
@@ -29,6 +18,7 @@ namespace Levers
             public int StrokeWeight { get; set; } = 1;
             public float CurvePrecision { get; set; } = 0.5f;
             public bool AlwaysDraw { get; set; } = false;
+            public float AntiAliasing { get; set; } = 1;
 
             public RenderState()
             {
@@ -38,6 +28,9 @@ namespace Levers
         private const string _unityUiClipRectKeyword = "UNITY_UI_CLIP_RECT";
         private const string _clipRectVariableName = "_ClipRect";
         private static PropertyInfo _visibleRectProperty;
+        /// <summary>
+        /// Retrives the internal value of <c>UnityEngine.GUIClip.visibleRect</c> if it exists.
+        /// </summary>
         private static Rect? GetVisibleRect()
         {
             if (_visibleRectProperty == null)
@@ -52,6 +45,9 @@ namespace Levers
             // Debug.Log("VisibleRect: " + res);
             return res;
         }
+        /// <summary>
+        /// Updates <paramref name="material"/> with the current value of the Unity ui clip rect if it exists.
+        /// </summary>
         private static void UpdateClipRect(Material material)
         {
             Rect? visibleRect = GetVisibleRect();
@@ -334,7 +330,7 @@ namespace Levers
 
             GL.PushMatrix();
             UpdateClipRect(Material);
-            UpdateTexture(Material);
+            Material.SetTexture("_MainTex", State.TextureFill?.Texture);
             if (!Material.SetPass(0))
             {
                 Debug.LogWarning("Failed to set material pass");
@@ -353,7 +349,10 @@ namespace Levers
 
             GL.PushMatrix();
             UpdateClipRect(FillComplexPolygonMaterial);
-            UpdateTexture(FillComplexPolygonMaterial);
+            FillComplexPolygonMaterial.SetTexture("_MainTex", State.TextureFill?.Texture);
+            FillComplexPolygonMaterial.SetColor("_StrokeColor", State.Stroke);
+            FillComplexPolygonMaterial.SetFloat("_StrokeWeight", State.StrokeWeight);
+            FillComplexPolygonMaterial.SetFloat("_AntiAliasing", State.AntiAliasing);
 
             { // NOTE: Can probably move this section out to unify with DrawSetup
                 if (partition.Edges.Count * 2 > MaxPolygonVertices)
@@ -391,14 +390,22 @@ namespace Levers
             {
                 return;
             }
+            if (path.Bounds == null)
+            {
+                return;
+            }
+            Rect bounds = path.Bounds.Value;
             // NOTE: Need to test with rotation and scale matrix, make sure doesn't clip
             var partitions = path.Partitions;
             foreach (var partition in partitions)
             {
-                var minX = path.Bounds.min.x;
+                float buffer = State.StrokeWeight + 1; // TODO: Add anti-aliasing buffer
+                var minX = bounds.min.x - buffer;
                 var minY = partition.Start;
-                var maxX = path.Bounds.max.x;
+                if (Mathf.Approximately(partition.Start, bounds.min.y)) { minY -= buffer; }
+                var maxX = bounds.max.x + buffer;
                 var maxY = partition.End;
+                if (Mathf.Approximately(partition.End, bounds.max.y)) { maxY += buffer; }
                 DrawSetupComplexPolygon(partition, State.Fill); // NOTE: Might be able to change this to GL.QUADS
                 AddPoint(new Vector2(minX, minY));
                 AddPoint(new Vector2(maxX, minY));
@@ -677,6 +684,7 @@ namespace Levers
             ITextureFill TextureFill { get; set; }
             int StrokeWeight { get; set; }
             float CurvePrecision { get; set; }
+            float AntiAliasing { get; set; }
             /// <summary>
             /// Should drawing be done outside EventType.Repaint?
             /// </summary>
@@ -889,16 +897,7 @@ namespace Levers
             {
                 return;
             }
-            var points = path.ExportPoints();
-            if (State.Fill != Color.clear)
-            {
-                DrawFilledComplexPolygon(path);
-            }
-
-            if (State.Stroke != Color.clear)
-            {
-                DrawPolyline(points, closed: false);
-            }
+            DrawFilledComplexPolygon(path);
         }
         #endregion Exposed
     }

@@ -7,6 +7,71 @@ namespace Levers
 {
     public class Path2D
     {
+        public Path2D(Vector2 start)
+        {
+            AddPoint(start);
+        }
+
+        public void LineTo(Vector2 position)
+        {
+            AddPoint(position);
+        }
+
+        public void BezierCurveTo(Vector2 controlPoint1, Vector2 controlPoint2, Vector2 position)
+        {
+            // TODO: Make precision adaptive
+            PathComputation.GenerateCubicBezierPoints(p0: _points[_points.Count - 1],
+                                                      p1: controlPoint1,
+                                                      p2: controlPoint2,
+                                                      p3: position,
+                                                      threshold: DrawImplementations.State.CurvePrecision,
+                                                      onPoint: AddPoint);
+        }
+
+        public void QuadraticCurveTo(Vector2 controlPoint, Vector2 position)
+        {
+            // TODO: Make precision adaptive
+            PathComputation.GenerateQuadraticBezierPoints(_points[_points.Count - 1],
+                                                          controlPoint,
+                                                          position,
+                                                          DrawImplementations.State.CurvePrecision,
+                                                          AddPoint);
+        }
+
+        // NOTE: Not very confident in this code yet
+        public void ArcTo(Vector2 tangent1, Vector2 tangent2, float radius)
+        {
+            var newPoints = PathComputation.ArcTo(_points[_points.Count - 1].x,
+                                                  _points[_points.Count - 1].y,
+                                                  tangent1.x,
+                                                  tangent1.y,
+                                                  tangent2.x,
+                                                  tangent2.y,
+                                                  radius);
+            AddPoints(newPoints);
+        }
+
+        public void Close()
+        {
+            if (_points.Count > 1)
+            {
+                AddPoint(_points[0]);
+            }
+            else
+            {
+                Debug.LogWarning("Path2D: ClosePath called on empty path");
+            }
+        }
+
+        public void Clear()
+        {
+            _points.Clear();
+            _partitions.Clear();
+            _rootPartition.Clear();
+            _lastPoint = null;
+            Bounds = null;
+        }
+
         private List<Vector2> _points = new List<Vector2>();
 
         internal Vector2[] ExportPoints()
@@ -14,26 +79,31 @@ namespace Levers
             return _points.ToArray();
         }
 
-        internal Rect Bounds { get; private set; } = new Rect();
+        internal Rect? Bounds { get; private set; } = null;
 
-        public class Partition
+        internal class Partition
         {
-            public float Start;
-            public float End;
-            public List<(Vector2, Vector2)> Edges = new List<(Vector2, Vector2)>();
-            public int Depth;
+            internal float Start;
+            internal float End;
+            internal List<(Vector2, Vector2)> Edges = new List<(Vector2, Vector2)>();
+            internal int Depth;
 
-            public void Clear()
+            internal void Clear()
             {
                 Edges.Clear();
                 Start = 0;
                 End = 0;
             }
+
+            public override string ToString()
+            {
+                return $"Partition(Start: {Start}, End: {End}, Edges: {Edges.Count}, Depth: {Depth})";
+            }
         }
 
         private List<Partition> _partitions = new List<Partition>();
 
-        public IReadOnlyCollection<Partition> Partitions
+        internal IReadOnlyCollection<Partition> Partitions
         {
             get
             {
@@ -140,34 +210,27 @@ namespace Levers
         {
             _points.Add(point);
 
-            Bounds = Rect.MinMaxRect(Mathf.Min(point.x, Bounds.xMin),
-                                     Mathf.Min(point.y, Bounds.yMin),
-                                     Mathf.Max(point.x, Bounds.xMax),
-                                     Mathf.Max(point.y, Bounds.yMax));
-
-            if (_lastPoint is null)
+            Rect bounds;
+            if (Bounds == null)
             {
-                _lastPoint = point;
+                Bounds = bounds = new Rect(point, Vector2.zero);
             }
             else
             {
-                _rootPartition.Edges.Add((_lastPoint.Value, point));
-                _lastPoint = point;
+                bounds = Bounds.Value;
+                Bounds = Rect.MinMaxRect(Mathf.Min(point.x, bounds.xMin),
+                                         Mathf.Min(point.y, bounds.yMin),
+                                         Mathf.Max(point.x, bounds.xMax),
+                                         Mathf.Max(point.y, bounds.yMax));
             }
 
-            _rootPartition.Start = Bounds.yMin;
-            _rootPartition.End = Bounds.yMax;
+            if (_lastPoint != null) { _rootPartition.Edges.Add((_lastPoint.Value, point)); }
+            _lastPoint = point;
+
+            _rootPartition.Start = bounds.yMin;
+            _rootPartition.End = bounds.yMax;
 
             _partitions.Clear();
-        }
-
-        public void Clear()
-        {
-            _points.Clear();
-            _partitions.Clear();
-            _rootPartition.Clear();
-            _lastPoint = null;
-            Bounds = new Rect();
         }
 
         private void AddPoints(IEnumerable<Vector2> points)
@@ -178,48 +241,5 @@ namespace Levers
             }
         }
 
-        public Path2D(Vector2 start)
-        {
-            AddPoint(start);
-        }
-
-        public void LineTo(Vector2 position)
-        {
-            AddPoint(position);
-        }
-
-        public void BezierCurveTo(Vector2 controlPoint1, Vector2 controlPoint2, Vector2 position)
-        {
-            // TODO: Make precision adaptive
-            PathComputation.GenerateCubicBezierPoints(p0: _points[_points.Count - 1],
-                                                      p1: controlPoint1,
-                                                      p2: controlPoint2,
-                                                      p3: position,
-                                                      threshold: DrawImplementations.State.CurvePrecision,
-                                                      onPoint: AddPoint);
-        }
-
-        public void QuadraticCurveTo(Vector2 controlPoint, Vector2 position)
-        {
-            // TODO: Make precision adaptive
-            PathComputation.GenerateQuadraticBezierPoints(_points[_points.Count - 1],
-                                                          controlPoint,
-                                                          position,
-                                                          DrawImplementations.State.CurvePrecision,
-                                                          AddPoint);
-        }
-
-        // NOTE: Not very confident in this code yet
-        public void ArcTo(Vector2 tangent1, Vector2 tangent2, float radius)
-        {
-            var newPoints = PathComputation.ArcTo(_points[_points.Count - 1].x,
-                                                  _points[_points.Count - 1].y,
-                                                  tangent1.x,
-                                                  tangent1.y,
-                                                  tangent2.x,
-                                                  tangent2.y,
-                                                  radius);
-            AddPoints(newPoints);
-        }
     }
 }

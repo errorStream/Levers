@@ -25,6 +25,11 @@ namespace Levers
             get => DrawImplementations.State.StrokeWeight;
             set => DrawImplementations.State.StrokeWeight = value;
         }
+        public static float AntiAliasing
+        {
+            get => DrawImplementations.State.AntiAliasing;
+            set => DrawImplementations.State.AntiAliasing = value;
+        }
 
         public static void Line(float x1, float y1, float x2, float y2)
         {
@@ -269,16 +274,11 @@ namespace Levers
         {
             DrawImplementations.ArrowheadImpl(new Vector2(startX, startY), end, widthRatio);
         }
-        public static void Path(Path2D path = null)
+        public static void Path(Path2D path)
         {
             if (path == null)
             {
-                path = new Path2D(new Vector2(30, 20));
-                path.LineTo(new Vector2(75, 20));
-                path.LineTo(new Vector2(75, 5));
-                path.LineTo(new Vector2(85, 5));
-                path.LineTo(new Vector2(85, 75));
-                path.LineTo(new Vector2(30, 75));
+                return;
             }
             DrawImplementations.DrawPathImpl(path);
         }
