@@ -290,5 +290,9 @@ namespace Levers
         {
             DrawImplementations.PopStateImpl();
         }
+        public static void Ellipse2(float x, float y, float width, float? height, int segments = 36)
+        {
+            DrawImplementations.Ellipse2Impl(new Vector2(x, y), width, height ?? width, segments);
+        }
     }
 }

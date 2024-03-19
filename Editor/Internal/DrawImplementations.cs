@@ -706,6 +706,22 @@ namespace Levers
                 DrawPolyline(points);
             }
         }
+        private static readonly Path2D _path2D = new Path2D();
+        internal static void Ellipse2Impl(Vector2 center, float width, float height, int segments)
+        {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
+            var points = GenerateEllipsePoints(center, width, height, segments);
+            _path2D.Clear();
+            for (int i = 1; i < points.Length; ++i)
+            {
+                _path2D.LineTo(points[i]);
+            }
+            _path2D.Close();
+            DrawFilledComplexPolygon(_path2D);
+        }
         internal static void ArcImpl(Vector2 center, float width, float height, float startAngle, float stopAngle, ArcDrawMode mode, int segments)
         {
             if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)

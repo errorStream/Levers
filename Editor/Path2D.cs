@@ -7,6 +7,10 @@ namespace Levers
 {
     public class Path2D
     {
+        public Path2D()
+        {
+
+        }
         public Path2D(Vector2 start)
         {
             AddPoint(start);
