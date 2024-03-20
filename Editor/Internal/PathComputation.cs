@@ -189,15 +189,13 @@ namespace Levers
             return point;
         }
 
-        internal static List<Vector2> ApproximateCubicBSpline(IReadOnlyList<Vector2> controlPoints, int segmentsPerCurve = 10)
+        internal static void ApproximateCubicBSpline(IReadOnlyList<Vector2> controlPoints, Action<Vector2> onPoint, int segmentsPerCurve = 10)
         {
             if (controlPoints == null || controlPoints.Count < 4)
             {
                 Debug.LogError("At least 4 control points are required for a cubic B-spline.");
-                return null;
+                return;
             }
-
-            List<Vector2> polylinePoints = new List<Vector2>();
 
             for (int i = 0; i < controlPoints.Count - 3; i++)
             {
@@ -206,14 +204,11 @@ namespace Levers
                 Vector2 p2 = controlPoints[i + 2];
                 Vector2 p3 = controlPoints[i + 3];
 
-                polylinePoints.AddRange(BSpline(p0, p1, p2, p3, segmentsPerCurve));
+                BSpline(p0, p1, p2, p3, segmentsPerCurve, onPoint);
             }
-
-            return polylinePoints;
         }
-        private static List<Vector2> BSpline(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, int divisions)
+        private static void BSpline(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4, int divisions, Action<Vector2> onPoint)
         {
-            var res = new List<Vector2>();
             var a0 = (-p1.x + 3f * p2.x - 3f * p3.x + p4.x) / 6.0f;
             var a1 = (3f * p1.x - 6f * p2.x + 3f * p3.x) / 6.0f;
             var a2 = (-3f * p1.x + 3f * p3.x) / 6.0f;
@@ -222,16 +217,15 @@ namespace Levers
             var b1 = (3f * p1.y - 6f * p2.y + 3f * p3.y) / 6.0f;
             var b2 = (-3f * p1.y + 3f * p3.y) / 6.0f;
             var b3 = (p1.y + 4f * p2.y + p3.y) / 6.0f;
-            res.Add(new Vector2(a3, b3));
+            onPoint(new Vector2(a3, b3));
             for (int i = 1; i < divisions; i++)
             {
                 float t;
                 t = i / ((float)divisions);
-                res.Add(new Vector2(
+                onPoint(new Vector2(
                             a3 + t * (a2 + t * (a1 + t * a0)),
                             b3 + t * (b2 + t * (b1 + t * b0))));
             }
-            return res;
         }
     }
 }

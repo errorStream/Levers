@@ -15,7 +15,7 @@ namespace Levers
             public Color Fill { get; set; } = Color.white;
             public Color Stroke { get; set; } = Color.clear;
             public ITextureFill TextureFill { get; set; } = null;
-            public int StrokeWeight { get; set; } = 1;
+            public float StrokeWeight { get; set; } = 1;
             public float CurvePrecision { get; set; } = 0.5f;
             public bool AlwaysDraw { get; set; } = false;
             public float AntiAliasing { get; set; } = 1;
@@ -436,55 +436,54 @@ namespace Levers
             }
             DrawCleanup();
         }
-        private static void DrawFilledStar(Vector2 center, float innerRadius, float outerRadius, int numberOfPoints, float rotation)
+        // private static void DrawFilledStar(Vector2 center, float innerRadius, float outerRadius, int numberOfPoints, float rotation)
+        // {
+        //     DrawSetup(GL.TRIANGLES, State.Fill);
+        //     float angleStep = Mathf.PI * 2 / numberOfPoints;
+        //     float halfAngleStep = angleStep * 0.5f;
+
+        //     for (int i = 0; i < numberOfPoints; i++)
+        //     {
+        //         float angle = angleStep * i + rotation;
+        //         float nextAngle = angleStep * (i + 1) + rotation;
+
+        //         Vector2 innerPoint1 = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * innerRadius;
+        //         Vector2 outerPoint = center + new Vector2(Mathf.Cos(angle + halfAngleStep), Mathf.Sin(angle + halfAngleStep)) * outerRadius;
+        //         Vector2 innerPoint2 = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * innerRadius;
+
+        //         AddPoint(innerPoint1);
+        //         AddPoint(outerPoint);
+        //         AddPoint(center);
+        //         AddPoint(outerPoint);
+        //         AddPoint(innerPoint2);
+        //         AddPoint(center);
+        //     }
+        //     DrawCleanup();
+        // }
+        // private static void DrawStarOutline(Vector2 center, float innerRadius, float outerRadius, int numberOfPoints, float rotation)
+        // {
+        //     DrawSetup(GL.LINES, State.Stroke);
+        //     float angleStep = Mathf.PI * 2 / numberOfPoints;
+        //     float halfAngleStep = angleStep * 0.5f;
+
+        //     for (int i = 0; i < numberOfPoints; i++)
+        //     {
+        //         float angle = angleStep * i + rotation;
+        //         float nextAngle = angleStep * (i + 1) + rotation;
+
+        //         Vector2 innerPoint1 = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * innerRadius;
+        //         Vector2 outerPoint = center + new Vector2(Mathf.Cos(angle + halfAngleStep), Mathf.Sin(angle + halfAngleStep)) * outerRadius;
+        //         Vector2 innerPoint2 = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * innerRadius;
+
+        //         AddPoint(innerPoint1);
+        //         AddPoint(outerPoint);
+        //         AddPoint(outerPoint);
+        //         AddPoint(innerPoint2);
+        //     }
+        //     DrawCleanup();
+        // }
+        private static void CalcVariableRadiusPolygon(Vector2 center, IReadOnlyList<float> radii, float rotation, Action<Vector2> onPoint)
         {
-            DrawSetup(GL.TRIANGLES, State.Fill);
-            float angleStep = Mathf.PI * 2 / numberOfPoints;
-            float halfAngleStep = angleStep * 0.5f;
-
-            for (int i = 0; i < numberOfPoints; i++)
-            {
-                float angle = angleStep * i + rotation;
-                float nextAngle = angleStep * (i + 1) + rotation;
-
-                Vector2 innerPoint1 = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * innerRadius;
-                Vector2 outerPoint = center + new Vector2(Mathf.Cos(angle + halfAngleStep), Mathf.Sin(angle + halfAngleStep)) * outerRadius;
-                Vector2 innerPoint2 = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * innerRadius;
-
-                AddPoint(innerPoint1);
-                AddPoint(outerPoint);
-                AddPoint(center);
-                AddPoint(outerPoint);
-                AddPoint(innerPoint2);
-                AddPoint(center);
-            }
-            DrawCleanup();
-        }
-        private static void DrawStarOutline(Vector2 center, float innerRadius, float outerRadius, int numberOfPoints, float rotation)
-        {
-            DrawSetup(GL.LINES, State.Stroke);
-            float angleStep = Mathf.PI * 2 / numberOfPoints;
-            float halfAngleStep = angleStep * 0.5f;
-
-            for (int i = 0; i < numberOfPoints; i++)
-            {
-                float angle = angleStep * i + rotation;
-                float nextAngle = angleStep * (i + 1) + rotation;
-
-                Vector2 innerPoint1 = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * innerRadius;
-                Vector2 outerPoint = center + new Vector2(Mathf.Cos(angle + halfAngleStep), Mathf.Sin(angle + halfAngleStep)) * outerRadius;
-                Vector2 innerPoint2 = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * innerRadius;
-
-                AddPoint(innerPoint1);
-                AddPoint(outerPoint);
-                AddPoint(outerPoint);
-                AddPoint(innerPoint2);
-            }
-            DrawCleanup();
-        }
-        private static void DrawFilledVariableRadiusPolygon(Vector2 center, IReadOnlyList<float> radii, float rotation)
-        {
-            DrawSetup(GL.TRIANGLES, State.Fill);
             float angleStep = Mathf.PI * 2 / radii.Count;
 
             for (int i = 0; i < radii.Count; i++)
@@ -495,30 +494,47 @@ namespace Levers
                 Vector2 currPoint = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radii[i];
                 Vector2 nextPoint = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * radii[i + 1 % radii.Count];
 
-                AddPoint(currPoint);
-                AddPoint(nextPoint);
-                AddPoint(center);
+                onPoint(currPoint);
+                onPoint(nextPoint);
             }
-            DrawCleanup();
         }
-        private static void DrawVariableRadiusPolygonOutline(Vector2 center, IReadOnlyList<float> radii, float rotation)
-        {
-            DrawSetup(GL.LINES, State.Stroke);
-            float angleStep = Mathf.PI * 2 / radii.Count;
+        // private static void DrawFilledVariableRadiusPolygon(Vector2 center, IReadOnlyList<float> radii, float rotation)
+        // {
+        //     DrawSetup(GL.TRIANGLES, State.Fill);
+        //     float angleStep = Mathf.PI * 2 / radii.Count;
 
-            for (int i = 0; i < radii.Count; i++)
-            {
-                float angle = angleStep * i + rotation;
-                float nextAngle = angleStep * (i + 1) + rotation;
+        //     for (int i = 0; i < radii.Count; i++)
+        //     {
+        //         float angle = angleStep * i + rotation;
+        //         float nextAngle = angleStep * (i + 1) + rotation;
 
-                Vector2 currPoint = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radii[i];
-                Vector2 nextPoint = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * radii[i + 1 % radii.Count];
+        //         Vector2 currPoint = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radii[i];
+        //         Vector2 nextPoint = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * radii[i + 1 % radii.Count];
 
-                AddPoint(currPoint);
-                AddPoint(nextPoint);
-            }
-            DrawCleanup();
-        }
+        //         AddPoint(currPoint);
+        //         AddPoint(nextPoint);
+        //         AddPoint(center);
+        //     }
+        //     DrawCleanup();
+        // }
+        // private static void DrawVariableRadiusPolygonOutline(Vector2 center, IReadOnlyList<float> radii, float rotation)
+        // {
+        //     DrawSetup(GL.LINES, State.Stroke);
+        //     float angleStep = Mathf.PI * 2 / radii.Count;
+
+        //     for (int i = 0; i < radii.Count; i++)
+        //     {
+        //         float angle = angleStep * i + rotation;
+        //         float nextAngle = angleStep * (i + 1) + rotation;
+
+        //         Vector2 currPoint = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radii[i];
+        //         Vector2 nextPoint = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * radii[i + 1 % radii.Count];
+
+        //         AddPoint(currPoint);
+        //         AddPoint(nextPoint);
+        //     }
+        //     DrawCleanup();
+        // }
 
         private static void GenerateEllipsePoints(Vector2 center, float width, float height, int segments, Action<Vector2> onPoint)
         {
@@ -580,28 +596,74 @@ namespace Levers
 
             return points;
         }
-
-        private static Vector2[] GenerateRectanglePoints(Vector2 topLeft, float width, float height)
+        private static void GenerateArcPoints(Vector2 center, float width, float height, float startAngle, float stopAngle, ArcDrawMode mode, int segments, Action<Vector2> onPoint)
         {
-            var points = new Vector2[4];
+            int arcSegments = Mathf.Max(2, Mathf.CeilToInt(segments * Mathf.Abs(stopAngle - startAngle) / (2 * Mathf.PI)));
+            bool addCenter;
+            {
+                if (mode == ArcDrawMode.Pie || mode == ArcDrawMode.Center)
+                {
+                    addCenter = true;
+                }
+                else if (mode == ArcDrawMode.Chord || mode == ArcDrawMode.Open)
+                {
+                    addCenter = false;
+                }
+                else
+                {
+                    addCenter = true;
+                    Debug.LogWarning($"Unknown arc draw mode '{mode}'");
+                }
+            }
+            float angle = startAngle;
+            float increment = (stopAngle - startAngle) / arcSegments;
 
-            points[0] = topLeft;
-            points[1] = topLeft + new Vector2(width, 0);
-            points[2] = topLeft + new Vector2(width, height);
-            points[3] = topLeft + new Vector2(0, height);
-
-            return points;
+            Vector2 startPoint = default;
+            for (int i = 0; i <= arcSegments; i++)
+            {
+                var pnt = new Vector2(
+                    center.x + (width / 2 * Mathf.Cos(angle)),
+                    center.y + (height / 2 * Mathf.Sin(angle))
+                );
+                if (i == 0)
+                {
+                    startPoint = pnt;
+                }
+                if (addCenter)
+                {
+                    if (arcSegments + 1 == i)
+                    {
+                        pnt = center;
+                    }
+                    else if (arcSegments + 2 == i)
+                    {
+                        pnt = startPoint;
+                    }
+                }
+                else
+                {
+                    if (arcSegments + 1 == i)
+                    {
+                        pnt = startPoint;
+                    }
+                }
+                onPoint(pnt);
+                angle += increment;
+            }
         }
-        private static Vector2[] GenerateRoundedRectanglePoints(Vector2 bottomLeft, float width, float height, float tl, float tr, float br, float bl, int segments)
+
+        private static void GenerateRectanglePoints(Vector2 topLeft, float width, float height, Action<Vector2> onPoint)
+        {
+            onPoint(topLeft);
+            onPoint(topLeft + new Vector2(width, 0));
+            onPoint(topLeft + new Vector2(width, height));
+            onPoint(topLeft + new Vector2(0, height));
+        }
+        private static void GenerateRoundedRectanglePoints(Vector2 bottomLeft, float width, float height, float tl, float tr, float br, float bl, int segments, Action<Vector2> onPoint)
         {
             segments = Mathf.Max(1, segments);
 
-            int numPoints = 4 * segments;
-            Vector2[] points = new Vector2[numPoints];
-
             float cornerAngleIncrement = Mathf.PI / 2 / segments;
-
-            int pointIndex = 0;
 
             // Generate points for each rounded corner
             for (int corner = 0; corner < 4; corner++)
@@ -636,19 +698,16 @@ namespace Levers
 
                 for (int segment = 0; segment < segments; segment++)
                 {
-                    float angle = startAngle + segment * cornerAngleIncrement;
-                    points[pointIndex++] = new Vector2(
-                        cornerCenter.x + cornerRadius * Mathf.Cos(angle),
-                        cornerCenter.y + cornerRadius * Mathf.Sin(angle)
-                    );
+                    float angle = startAngle + (segment * cornerAngleIncrement);
+                    onPoint(new Vector2(
+                        cornerCenter.x + (cornerRadius * Mathf.Cos(angle)),
+                        cornerCenter.y + (cornerRadius * Mathf.Sin(angle))
+                    ));
                 }
             }
-
-            return points;
         }
-        private static Vector2[] CalcArrowheadPoints(Vector2 start, Vector2 end, float widthRatio)
+        private static void CalcArrowheadPoints(Vector2 start, Vector2 end, float widthRatio, Action<Vector2> onPoint)
         {
-            Vector2[] points = new Vector2[3];
             Vector2 direction = end - start;
             float distance = direction.magnitude;
             float width = distance * widthRatio;
@@ -656,11 +715,24 @@ namespace Levers
             Vector2 normalizedDirection = direction.normalized;
             Vector2 perpendicular = new Vector2(-normalizedDirection.y, normalizedDirection.x);
 
-            points[0] = start + perpendicular * (width * 0.5f);
-            points[1] = start - perpendicular * (width * 0.5f);
-            points[2] = end;
+            onPoint(start + perpendicular * (width * 0.5f));
+            onPoint(start - perpendicular * (width * 0.5f));
+            onPoint(end);
+        }
+        private static void CalcStarPoints(Vector2 center, float innerRadius, float outerRadius, int numberOfPoints, float rotation, Action<Vector2> onPoint)
+        {
+            float angleStep = Mathf.PI * 2 / numberOfPoints;
+            float halfAngleStep = angleStep * 0.5f;
+            for (int i = 0; i < numberOfPoints; i++)
+            {
+                float angle = (angleStep * i) + rotation;
 
-            return points;
+                Vector2 innerPoint = center + (new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * innerRadius);
+                Vector2 outerPoint = center + (new Vector2(Mathf.Cos(angle + halfAngleStep), Mathf.Sin(angle + halfAngleStep)) * outerRadius);
+
+                onPoint(innerPoint);
+                onPoint(outerPoint);
+            }
         }
 
         #region Exposed
@@ -683,7 +755,7 @@ namespace Levers
             Color Fill { get; set; }
             Color Stroke { get; set; }
             ITextureFill TextureFill { get; set; }
-            int StrokeWeight { get; set; }
+            float StrokeWeight { get; set; }
             float CurvePrecision { get; set; }
             float AntiAliasing { get; set; }
             /// <summary>
@@ -691,25 +763,8 @@ namespace Levers
             /// </summary>
             bool AlwaysDraw { get; set; }
         }
-        internal static void EllipseImpl(Vector2 center, float width, float height, int segments)
-        {
-            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
-            {
-                return;
-            }
-            var points = new List<Vector2>(segments);
-            GenerateEllipsePoints(center, width, height, segments, points.Add);
-            if (State.Fill != Color.clear)
-            {
-                DrawFilledConvexPolygon(points);
-            }
-            if (State.Stroke != Color.clear)
-            {
-                DrawPolyline(points);
-            }
-        }
         private static readonly Path2D _path2D = new Path2D();
-        internal static void Ellipse2Impl(Vector2 center, float width, float height, int segments)
+        internal static void EllipseImpl(Vector2 center, float width, float height, int segments)
         {
             if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
             {
@@ -721,6 +776,73 @@ namespace Levers
             DrawFilledComplexPolygon(_path2D);
         }
         internal static void ArcImpl(Vector2 center, float width, float height, float startAngle, float stopAngle, ArcDrawMode mode, int segments)
+        {
+            ArcImpl2(center, width, height, startAngle, stopAngle, mode, segments);
+        }
+        private static readonly List<Vector2> _arcPoints = new List<Vector2>();
+        internal static void ArcImpl2(Vector2 center, float width, float height, float startAngle, float stopAngle, ArcDrawMode mode, int segments)
+        {
+            if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
+
+            bool noOutlineOnCut = (mode == ArcDrawMode.Open) || (mode == ArcDrawMode.Center);
+            bool goesThroughCenter = (mode == ArcDrawMode.Center) || (mode == ArcDrawMode.Pie);
+            {
+                _path2D.Clear();
+
+                if (noOutlineOnCut)
+                {
+                    _arcPoints.Clear();
+                }
+                if (goesThroughCenter)
+                {
+                    _path2D.LineTo(center);
+                }
+                int arcSegments = Mathf.Max(2, Mathf.CeilToInt(segments * Mathf.Abs(stopAngle - startAngle) / (2 * Mathf.PI)));
+                float angle = startAngle;
+                float increment = (stopAngle - startAngle) / arcSegments;
+                for (int i = 0; i <= arcSegments; i++)
+                {
+                    var pnt = new Vector2(
+                        center.x + (width / 2 * Mathf.Cos(angle)),
+                        center.y + (height / 2 * Mathf.Sin(angle))
+                    );
+                    _path2D.LineTo(pnt);
+                    if (noOutlineOnCut)
+                    {
+                        _arcPoints.Add(pnt);
+                    }
+                    angle += increment;
+                }
+                _path2D.Close();
+                Color oldStroke = default;
+                if (noOutlineOnCut)
+                {
+                    oldStroke = State.Stroke;
+                    State.Stroke = Color.clear;
+                }
+                DrawFilledComplexPolygon(_path2D);
+                if (noOutlineOnCut)
+                {
+                    State.Stroke = oldStroke;
+                }
+            }
+            if (noOutlineOnCut)
+            {
+                _path2D.Clear();
+                for (int i = 0; i < _arcPoints.Count; i++)
+                {
+                    _path2D.LineTo(_arcPoints[i]);
+                }
+                var oldFill = State.Fill;
+                State.Fill = Color.clear;
+                DrawFilledComplexPolygon(_path2D);
+                State.Fill = oldFill;
+            }
+        }
+        internal static void ArcImpl3(Vector2 center, float width, float height, float startAngle, float stopAngle, ArcDrawMode mode, int segments)
         {
             if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
             {
@@ -782,26 +904,47 @@ namespace Levers
             {
                 return;
             }
-            Vector2[] points;
+            _path2D.Clear();
+
             if (tl == 0 && tr == 0 && br == 0 && bl == 0)
             {
-                points = GenerateRectanglePoints(bottomLeft, width, height);
+                GenerateRectanglePoints(bottomLeft, width, height, _path2D.LineToAction);
             }
             else
             {
-                points = GenerateRoundedRectanglePoints(bottomLeft, width, height, tl, tr, br, bl, segments);
+                GenerateRoundedRectanglePoints(bottomLeft, width, height, tl, tr, br, bl, segments, _path2D.LineToAction);
             }
 
-            if (State.Fill != Color.clear)
-            {
-                DrawFilledConvexPolygon(points);
-            }
+            _path2D.Close();
 
-            if (State.Stroke != Color.clear)
-            {
-                DrawPolyline(points.Length, points, closed: true);
-            }
+            DrawFilledComplexPolygon(_path2D);
         }
+        // internal static void RectImp(Vector2 bottomLeft, float width, float height, float tl, float tr, float br, float bl, int segments)
+        // {
+        //     if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+        //     {
+        //         return;
+        //     }
+        //     Vector2[] points;
+        //     if (tl == 0 && tr == 0 && br == 0 && bl == 0)
+        //     {
+        //         points = GenerateRectanglePoints(bottomLeft, width, height);
+        //     }
+        //     else
+        //     {
+        //         points = GenerateRoundedRectanglePoints(bottomLeft, width, height, tl, tr, br, bl, segments);
+        //     }
+
+        //     if (State.Fill != Color.clear)
+        //     {
+        //         DrawFilledConvexPolygon(points);
+        //     }
+
+        //     if (State.Stroke != Color.clear)
+        //     {
+        //         DrawPolyline(points.Length, points, closed: true);
+        //     }
+        // }
 
         internal static void LineImpl(Vector2 start, Vector2 end)
         {
@@ -809,27 +952,36 @@ namespace Levers
             {
                 return;
             }
-            var points = new[] { start, end };
-            if (State.Stroke != Color.clear)
-            {
-                DrawPolyline(points);
-            }
+            _path2D.Clear();
+            _path2D.LineTo(start);
+            _path2D.LineTo(end);
+            var oldFill = State.Fill;
+            State.Fill = Color.clear;
+            DrawFilledComplexPolygon(_path2D);
+            State.Fill = oldFill;
         }
+        // internal static void LineImpl(Vector2 start, Vector2 end)
+        // {
+        //     if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
+        //     {
+        //         return;
+        //     }
+        //     var points = new[] { start, end };
+        //     if (State.Stroke != Color.clear)
+        //     {
+        //         DrawPolyline(points);
+        //     }
+        // }
         internal static void StarImp(float x, float y, float innerRadius, float outerRadius, int points, float rotation)
         {
             if (!State.AlwaysDraw && Event.current.type != EventType.Repaint)
             {
                 return;
             }
-            if (State.Fill != Color.clear)
-            {
-                DrawFilledStar(new Vector2(x, y), innerRadius, outerRadius, points, rotation);
-            }
-
-            if (State.Stroke != Color.clear)
-            {
-                DrawStarOutline(new Vector2(x, y), innerRadius, outerRadius, points, rotation);
-            }
+            _path2D.Clear();
+            CalcStarPoints(new Vector2(x, y), innerRadius, outerRadius, points, rotation, _path2D.LineToAction);
+            _path2D.Close();
+            DrawFilledComplexPolygon(_path2D);
         }
         internal static void VariableRadiusPolygonImpl(float x, float y, IReadOnlyList<float> radii, float rotation)
         {
@@ -837,15 +989,19 @@ namespace Levers
             {
                 return;
             }
-            if (State.Fill != Color.clear)
-            {
-                DrawFilledVariableRadiusPolygon(new Vector2(x, y), radii, rotation);
-            }
+            _path2D.Clear();
+            CalcVariableRadiusPolygon(new Vector2(x, y), radii, rotation, _path2D.LineToAction);
+            _path2D.Close();
+            DrawFilledComplexPolygon(_path2D);
+            // if (State.Fill != Color.clear)
+            // {
+            //     DrawFilledVariableRadiusPolygon(new Vector2(x, y), radii, rotation);
+            // }
 
-            if (State.Stroke != Color.clear)
-            {
-                DrawVariableRadiusPolygonOutline(new Vector2(x, y), radii, rotation);
-            }
+            // if (State.Stroke != Color.clear)
+            // {
+            //     DrawVariableRadiusPolygonOutline(new Vector2(x, y), radii, rotation);
+            // }
         }
         internal static void CubicBezierImpl(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3)
         {
@@ -853,12 +1009,13 @@ namespace Levers
             {
                 return;
             }
-            if (State.Stroke != Color.clear)
-            {
-                var points = new List<Vector2>(); // TODO: Remove allocation
-                PathComputation.GenerateCubicBezierPoints(p0, p1, p2, p3, State.CurvePrecision, points.Add);
-                DrawPolyline(points.Count, points);
-            }
+            _path2D.Clear();
+            _path2D.LineTo(p0);
+            _path2D.BezierCurveTo(p1, p2, p3);
+            var oldFill = State.Fill;
+            State.Fill = Color.clear;
+            DrawFilledComplexPolygon(_path2D);
+            State.Fill = oldFill;
         }
         internal static void QuadraticBezierImpl(Vector2 p0, Vector2 p1, Vector2 p2)
         {
@@ -866,12 +1023,13 @@ namespace Levers
             {
                 return;
             }
-            if (State.Stroke != Color.clear)
-            {
-                var points = new List<Vector2>();
-                PathComputation.GenerateQuadraticBezierPoints(p0, p1, p2, State.CurvePrecision, points.Add);
-                DrawPolyline(points.Count, points);
-            }
+            _path2D.Clear();
+            _path2D.LineTo(p0);
+            _path2D.QuadraticCurveTo(p1, p2);
+            var oldFill = State.Fill;
+            State.Fill = Color.clear;
+            DrawFilledComplexPolygon(_path2D);
+            State.Fill = oldFill;
         }
         internal static void BSplineImpl(IReadOnlyList<Vector2> controlPoints, int segmentsPerCurve)
         {
@@ -884,9 +1042,9 @@ namespace Levers
                 return;
             }
 
-            var points = PathComputation.ApproximateCubicBSpline(controlPoints, segmentsPerCurve);
-
-            DrawPolyline(points);
+            _path2D.Clear();
+            PathComputation.ApproximateCubicBSpline(controlPoints, _path2D.LineToAction, segmentsPerCurve);
+            DrawFilledComplexPolygon(_path2D);
         }
         internal static void ArrowheadImpl(Vector2 start, Vector2 end, float widthRatio)
         {
@@ -894,16 +1052,10 @@ namespace Levers
             {
                 return;
             }
-            var points = CalcArrowheadPoints(start, end, widthRatio);
-            if (State.Fill != Color.clear)
-            {
-                DrawFilledConvexPolygon(points);
-            }
-
-            if (State.Stroke != Color.clear)
-            {
-                DrawPolyline(points, closed: true);
-            }
+            _path2D.Clear();
+            CalcArrowheadPoints(start, end, widthRatio, _path2D.LineToAction);
+            _path2D.Close();
+            DrawFilledComplexPolygon(_path2D);
         }
         internal static void DrawPathImpl(Path2D path)
         {

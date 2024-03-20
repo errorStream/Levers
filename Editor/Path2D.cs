@@ -87,7 +87,10 @@ namespace Levers
         {
             if (_points.Count > 1)
             {
-                AddPoint(_points[0]);
+                if (_points[0] != _points[_points.Count - 1])
+                {
+                    AddPoint(_points[0]);
+                }
             }
             else
             {
@@ -270,11 +273,11 @@ namespace Levers
             }
             else
             {
-                bounds = Bounds.Value;
-                Bounds = Rect.MinMaxRect(Mathf.Min(point.x, bounds.xMin),
-                                         Mathf.Min(point.y, bounds.yMin),
-                                         Mathf.Max(point.x, bounds.xMax),
-                                         Mathf.Max(point.y, bounds.yMax));
+                var oldBounds = Bounds.Value;
+                Bounds = bounds = Rect.MinMaxRect(Mathf.Min(point.x, oldBounds.xMin),
+                                                  Mathf.Min(point.y, oldBounds.yMin),
+                                                  Mathf.Max(point.x, oldBounds.xMax),
+                                                  Mathf.Max(point.y, oldBounds.yMax));
             }
 
             if (_lastPoint != null) { _rootPartition.Edges.Add((_lastPoint.Value, point)); }
@@ -282,6 +285,8 @@ namespace Levers
 
             _rootPartition.Start = bounds.yMin;
             _rootPartition.End = bounds.yMax;
+
+            // Debug.Log($"_rootPartition after add point {point}: " + _rootPartition);
 
             ClearPartitions();
         }

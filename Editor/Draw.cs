@@ -20,7 +20,7 @@ namespace Levers
             get => DrawImplementations.State.Stroke;
             set => DrawImplementations.State.Stroke = value;
         }
-        public static int StrokeWeight
+        public static float StrokeWeight
         {
             get => DrawImplementations.State.StrokeWeight;
             set => DrawImplementations.State.StrokeWeight = value;
@@ -290,9 +290,9 @@ namespace Levers
         {
             DrawImplementations.PopStateImpl();
         }
-        public static void Ellipse2(float x, float y, float width, float? height, int segments = 36)
-        {
-            DrawImplementations.Ellipse2Impl(new Vector2(x, y), width, height ?? width, segments);
-        }
+        // public static void Ellipse2(float x, float y, float width, float? height, int segments = 36)
+        // {
+        //     DrawImplementations.EllipseImpl(new Vector2(x, y), width, height ?? width, segments);
+        // }
     }
 }
