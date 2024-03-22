@@ -6,8 +6,18 @@
   "samples": [
     {
       "displayName": "Drawing Demos",
-      "description": "Provides a window which shows demos of variouse drawing operations",
-      "path": "Samples~/DrawingSamples"
+      "description": "Provides a window which shows demos of various drawing operations",
+      "path": "Samples~/DrawingDemos"
+    },
+    {
+      "displayName": "Pong",
+      "description": "Provides an implementation of Pong to demonstrate the usage on a bigger app",
+      "path": "Samples~/Pong"
+    },
+    {
+      "displayName": "Custom Editor Drawing",
+      "description": "Provides an example of using the library in an inspector editor, as well as clipping functionality",
+      "path": "Samples~/CustomEditorDrawing"
     }
   ]
 }

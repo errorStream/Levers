@@ -6,7 +6,7 @@ namespace Levers
 {
     internal static class PathComputation
     {
-        public static List<Vector2> ArcTo(float x0, float y0, float x1, float y1, float x2, float y2, float radius, int segments = 20)
+        internal static List<Vector2> ArcTo(float x0, float y0, float x1, float y1, float x2, float y2, float radius, int segments = 20)
         {
             List<Vector2> points = new List<Vector2>();
 

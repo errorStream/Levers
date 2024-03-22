@@ -5,11 +5,17 @@ using UnityEngine;
 
 namespace Levers
 {
+    /// <summary>
+    /// A 2D path which defines a drawable shape or line.
+    /// </summary>
     public class Path2D
     {
         private const int _partitionPoolSize = 256;
         private static readonly Queue<Partition> _partitionPool = new Queue<Partition>(_partitionPoolSize);
 
+        /// <summary>
+        /// Destructor for the Path2D.
+        /// </summary> 
         ~Path2D()
         {
             ClearPartitions();
@@ -33,15 +39,36 @@ namespace Levers
             _partitionPool.Enqueue(partition);
         }
 
+        /// <summary>
+        /// Constructs a new empty path.
+        /// </summary>
         public Path2D()
         {
             LineToAction = LineTo;
         }
+        /// <summary>
+        /// Constructs a new path with a single start point.
+        /// </summary>
+        /// <param name="start">The start point of the path.</param>
         public Path2D(Vector2 start) : this()
         {
             AddPoint(start);
         }
 
+        /// <summary>
+        /// Set the start point of this path and clear any existing points.
+        /// </summary>
+        /// <param name="position">The start point of the path.</param>
+        public void MoveTo(Vector2 position)
+        {
+            // WARN: Multiple subpaths are not yet supported
+            Clear();
+            AddPoint(position);
+        }
+        /// <summary>
+        /// Add a point to the path and connect it to the previous with a straight line.
+        /// </summary>
+        /// <param name="position">The position of the new point.</param>
         public void LineTo(Vector2 position)
         {
             AddPoint(position);
@@ -49,9 +76,14 @@ namespace Levers
 
         internal readonly Action<Vector2> LineToAction;
 
+        /// <summary>
+        /// Add a point to the path and connect it to the previous with a cubic bezier curve.
+        /// </summary>
+        /// <param name="controlPoint1">The start control point of the curve.</param>
+        /// <param name="controlPoint2">The end control point of the curve.</param>
+        /// <param name="position">The end point of the curve.</param>
         public void BezierCurveTo(Vector2 controlPoint1, Vector2 controlPoint2, Vector2 position)
         {
-            // TODO: Make precision adaptive
             PathComputation.GenerateCubicBezierPoints(p0: _points[_points.Count - 1],
                                                       p1: controlPoint1,
                                                       p2: controlPoint2,
@@ -60,9 +92,13 @@ namespace Levers
                                                       onPoint: AddPoint);
         }
 
+        /// <summary>
+        /// Add a point to the path and connect it to the previous with a quadratic bezier curve.
+        /// </summary>
+        /// <param name="controlPoint">The control point of the curve.</param>
+        /// <param name="position">The end point of the curve.</param>
         public void QuadraticCurveTo(Vector2 controlPoint, Vector2 position)
         {
-            // TODO: Make precision adaptive
             PathComputation.GenerateQuadraticBezierPoints(_points[_points.Count - 1],
                                                           controlPoint,
                                                           position,
@@ -71,6 +107,12 @@ namespace Levers
         }
 
         // NOTE: Not very confident in this code yet
+        /// <summary>
+        /// Add an arc to the end of this path.
+        /// </summary>
+        /// <param name="tangent1">The tangent of the curve at the start point.</param>
+        /// <param name="tangent2">The tangent of the curve at the end point.</param>
+        /// <param name="radius">The radius of the curve.</param>
         public void ArcTo(Vector2 tangent1, Vector2 tangent2, float radius)
         {
             var newPoints = PathComputation.ArcTo(_points[_points.Count - 1].x,
@@ -83,6 +125,9 @@ namespace Levers
             AddPoints(newPoints);
         }
 
+        /// <summary>
+        /// Add a line which connect the last point to the first point of the path if they are not already on the same point.
+        /// </summary>
         public void Close()
         {
             if (_points.Count > 1)
@@ -98,6 +143,9 @@ namespace Levers
             }
         }
 
+        /// <summary>
+        /// Remove all points from this path.
+        /// </summary>
         public void Clear()
         {
             _points.Clear();
