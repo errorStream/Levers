@@ -175,8 +175,6 @@ namespace Levers
             DrawImplementations.EllipseImpl(new Vector2(bounds.x, bounds.y), bounds.width, bounds.height, segments);
         }
 
-        // TODO: Should probably make draw functions take degrees
-
         private const int DEFAULT_ARC_DETAIL = 25;
         /// <summary>
         /// Draws an arc.
@@ -185,13 +183,13 @@ namespace Levers
         /// <param name="y">Y position of the center of the arc</param>
         /// <param name="w">Width of the arc</param>
         /// <param name="h">Height of the arc</param>
-        /// <param name="start">Start angle of the arc in radians</param>
-        /// <param name="stop">Stop angle of the arc in radians</param>
+        /// <param name="start">Start angle of the arc in degrees</param>
+        /// <param name="stop">Stop angle of the arc in degrees</param>
         /// <param name="mode">Drawing mode of the arc</param>
         /// <param name="detail">Number of segments to use to draw the arc</param>
         public static void Arc(float x, float y, float w, float h, float start, float stop, ArcDrawMode mode = default, int detail = DEFAULT_ARC_DETAIL)
         {
-            DrawImplementations.ArcImpl(new Vector2(x, y), w, h, start, stop, mode, detail);
+            DrawImplementations.ArcImpl(new Vector2(x, y), w, h, start * Mathf.Deg2Rad, stop * Mathf.Deg2Rad, mode, detail);
         }
         /// <summary>
         /// Draws an arc.
@@ -199,26 +197,26 @@ namespace Levers
         /// <param name="center">Center of the arc</param>
         /// <param name="w">Width of the arc</param>
         /// <param name="h">Height of the arc</param>
-        /// <param name="start">Start angle of the arc in radians</param>
-        /// <param name="stop">Stop angle of the arc in radians</param>
+        /// <param name="start">Start angle of the arc in degrees</param>
+        /// <param name="stop">Stop angle of the arc in degrees</param>
         /// <param name="mode">Drawing mode of the arc</param>
         /// <param name="detail">Number of segments to use to draw the arc</param>
         public static void Arc(Vector2 center, float w, float h, float start, float stop, ArcDrawMode mode = default, int detail = DEFAULT_ARC_DETAIL)
         {
-            DrawImplementations.ArcImpl(center, w, h, start, stop, mode, detail);
+            DrawImplementations.ArcImpl(center, w, h, start * Mathf.Deg2Rad, stop * Mathf.Deg2Rad, mode, detail);
         }
         /// <summary>
         /// Draws an arc.
         /// </summary>
         /// <param name="center">Center of the arc</param>
         /// <param name="size">Width and height of the arc</param>
-        /// <param name="start">Start angle of the arc in radians</param>
-        /// <param name="stop">Stop angle of the arc in radians</param>
+        /// <param name="start">Start angle of the arc in degrees</param>
+        /// <param name="stop">Stop angle of the arc in degrees</param>
         /// <param name="mode">Drawing mode of the arc</param>
         /// <param name="detail">Number of segments to use to draw the arc</param>
         public static void Arc(Vector2 center, Vector2 size, float start, float stop, ArcDrawMode mode = default, int detail = DEFAULT_ARC_DETAIL)
         {
-            DrawImplementations.ArcImpl(center, size.x, size.y, start, stop, mode, detail);
+            DrawImplementations.ArcImpl(center, size.x, size.y, start * Mathf.Deg2Rad, stop * Mathf.Deg2Rad, mode, detail);
         }
         /// <summary>
         /// Draws an arc.
@@ -226,25 +224,25 @@ namespace Levers
         /// <param name="x">X position of the center of the arc</param>
         /// <param name="y">Y position of the center of the arc</param>
         /// <param name="size">Width and height of the arc</param>
-        /// <param name="start">Start angle of the arc in radians</param>
-        /// <param name="stop">Stop angle of the arc in radians</param>
+        /// <param name="start">Start angle of the arc in degrees</param>
+        /// <param name="stop">Stop angle of the arc in degrees</param>
         /// <param name="mode">Drawing mode of the arc</param>
         /// <param name="detail">Number of segments to use to draw the arc</param>
         public static void Arc(float x, float y, Vector2 size, float start, float stop, ArcDrawMode mode = default, int detail = DEFAULT_ARC_DETAIL)
         {
-            DrawImplementations.ArcImpl(new Vector2(x, y), size.x, size.y, start, stop, mode, detail);
+            DrawImplementations.ArcImpl(new Vector2(x, y), size.x, size.y, start * Mathf.Deg2Rad, stop * Mathf.Deg2Rad, mode, detail);
         }
         /// <summary>
         /// Draws an arc.
         /// </summary>
         /// <param name="bounds">Bounds of the arc. Arc will be as large as possible while fitting in this rect</param>
-        /// <param name="start">Start angle of the arc in radians</param>
-        /// <param name="stop">Stop angle of the arc in radians</param>
+        /// <param name="start">Start angle of the arc in degrees</param>
+        /// <param name="stop">Stop angle of the arc in degrees</param>
         /// <param name="mode">Drawing mode of the arc</param>
         /// <param name="detail">Number of segments to use to draw the arc</param>
         public static void Arc(Rect bounds, float start, float stop, ArcDrawMode mode = default, int detail = DEFAULT_ARC_DETAIL)
         {
-            DrawImplementations.ArcImpl(new Vector2(bounds.x, bounds.y), bounds.width, bounds.height, start, stop, mode, detail);
+            DrawImplementations.ArcImpl(new Vector2(bounds.x, bounds.y), bounds.width, bounds.height, start * Mathf.Deg2Rad, stop * Mathf.Deg2Rad, mode, detail);
         }
 
         private const int DEFAULT_RECT_DETAIL = 8;
@@ -389,10 +387,10 @@ namespace Levers
         /// <param name="innerRadius">Radius of the inner points of the star</param>
         /// <param name="outerRadius">Radius of the outer points of the star</param>
         /// <param name="points">Number of points the star has</param>
-        /// <param name="rotation">Rotation of the star in radians</param>
+        /// <param name="rotation">Rotation of the star in degrees</param>
         public static void Star(float x, float y, float innerRadius, float outerRadius, int points, float rotation = 0f)
         {
-            DrawImplementations.StarImp(x, y, innerRadius, outerRadius, points, rotation);
+            DrawImplementations.StarImp(x, y, innerRadius, outerRadius, points, rotation * Mathf.Deg2Rad);
         }
         /// <summary>
         /// Draws a star.
@@ -401,10 +399,10 @@ namespace Levers
         /// <param name="innerRadius">Radius of the inner points of the star</param>
         /// <param name="outerRadius">Radius of the outer points of the star</param>
         /// <param name="points">Number of points the star has</param>
-        /// <param name="rotation">Rotation of the star in radians</param>
+        /// <param name="rotation">Rotation of the star in degrees</param>
         public static void Star(Vector2 center, float innerRadius, float outerRadius, int points, float rotation = 0f)
         {
-            DrawImplementations.StarImp(center.x, center.y, innerRadius, outerRadius, points, rotation);
+            DrawImplementations.StarImp(center.x, center.y, innerRadius, outerRadius, points, rotation * Mathf.Deg2Rad);
         }
         /// <summary>
         /// Draws a star.
@@ -412,20 +410,20 @@ namespace Levers
         /// <param name="x">X position of the center of the star</param>
         /// <param name="y">Y position of the center of the star</param>
         /// <param name="radii">List of radii for the star's points and dips</param>
-        /// <param name="rotation">Rotation of the star in radians</param>
+        /// <param name="rotation">Rotation of the star in degrees</param>
         public static void Star(float x, float y, IReadOnlyList<float> radii, float rotation = 0f)
         {
-            DrawImplementations.VariableRadiusPolygonImpl(x, y, radii, rotation);
+            DrawImplementations.VariableRadiusPolygonImpl(x, y, radii, rotation * Mathf.Deg2Rad);
         }
         /// <summary>
         /// Draws a star.
         /// </summary>
         /// <param name="center">Position of the center of the star</param>
         /// <param name="radii">List of radii for the star's points and dips</param>
-        /// <param name="rotation">Rotation of the star in radians</param>
+        /// <param name="rotation">Rotation of the star in degrees</param>
         public static void Star(Vector2 center, IReadOnlyList<float> radii, float rotation = 0f)
         {
-            DrawImplementations.VariableRadiusPolygonImpl(center.x, center.y, radii, rotation);
+            DrawImplementations.VariableRadiusPolygonImpl(center.x, center.y, radii, rotation * Mathf.Deg2Rad);
         }
         /// <summary> 
         /// Draws a cubic bezier curve.

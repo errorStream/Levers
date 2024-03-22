@@ -24,7 +24,7 @@ namespace Levers
         /// </summary>
         Vector2 Scale { get; set; }
         /// <summary>
-        /// The rotation of the texture in radians
+        /// The rotation of the texture in degrees
         /// </summary>
         float Rotation { get; set; }
     }
