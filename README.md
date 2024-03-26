@@ -99,6 +99,12 @@ The only dependency is a compatible Unity editor.
    - If you downloaded the package through releases
      3. Click "Add Package From Tarball"
      4. Navigate to the `.tgz` file and select it
+   - If you want to install directly from a git url
+     1. Click "Add Package from git URL"
+     2. Paste in a git url. This is available from the Code dropdown
+        in the top right. In this case it would be
+        https://github.com/errorStream/Levers.git
+     3. Click "Add"
 5. (Optional) Open the Samples area and click "Import" by the samples to bring in some example code
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
