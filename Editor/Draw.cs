@@ -172,7 +172,7 @@ namespace Levers
         /// <param name="segments">Number of segments to use to draw the ellipse</param>
         public static void Ellipse(Rect bounds, int segments = DEFAULT_ELLIPSE_SEGMENTS)
         {
-            DrawImplementations.EllipseImpl(new Vector2(bounds.x, bounds.y), bounds.width, bounds.height, segments);
+            DrawImplementations.EllipseImpl(bounds.center, bounds.width, bounds.height, segments);
         }
 
         private const int DEFAULT_ARC_DETAIL = 25;

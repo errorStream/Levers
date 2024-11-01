@@ -203,7 +203,7 @@ namespace Levers
                 float nextAngle = angleStep * (i + 1) + rotation;
 
                 Vector2 currPoint = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radii[i];
-                Vector2 nextPoint = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * radii[i + 1 % radii.Count];
+                Vector2 nextPoint = center + new Vector2(Mathf.Cos(nextAngle), Mathf.Sin(nextAngle)) * radii[(i + 1) % radii.Count];
 
                 onPoint(currPoint);
                 onPoint(nextPoint);
